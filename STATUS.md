@@ -434,3 +434,15 @@ gateway reports `ui_socket_present: true`; independent SSH inspection finds the
 socket at `/var/mobile/Library/DeviceBridge/ui.sock` with mode `0600` and mobile
 ownership. The helper still reports `recovery_required`, the public lease is
 stopped, and no grants or input have been issued.
+
+## First real gateway session — launch outcome uncertain — 2026-09-19
+
+After the owner cleared STOP and issued a five-minute fixture control grant, the
+real gateway opened session `ef1ed0d8-7e7e-484d-a138-cf49d65b892c`. The launch
+request `98d79925-7220-4ae4-ab1c-a675dd699d80` returned `OUTCOME_UNKNOWN` after
+the bounded execution/verification window. Its durable result record preserved
+that error; it was not replayed. The session was cancelled through the
+authenticated gateway and reports stopped with no held contacts. Read-only
+inspection confirms the fixture remains registered and no new crash report was
+created at the checked path. Real element observation and text input are not
+passes until the launch state is resolved with a fresh owner-approved session.
