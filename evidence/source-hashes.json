@@ -42,5 +42,7 @@
   "fixture/Resources/AppIcon60@2x.png": "7a1f2010cf35c4609758bd2210b4c59705ef8beb74556dbe74d80d3ea53be3f6",
   "fixture/Resources/AppIcon60@3x.png": "17bc6a0645ab13430d9ccfb83396257080214688370175c47dabeb2a566a432f",
   "fixture/Resources/AppIcon60.png": "43586a1fdeb23a63eb3729a85c6487a4f154665fef73060c25fcf180089c566a",
-  "fixture/Resources/AppIcon.svg": "7b8b62f7a2f6fb621954170e939ca536160e6abdd15af3b126b512fbf0d7ece7"
+  "fixture/Resources/AppIcon.svg": "7b8b62f7a2f6fb621954170e939ca536160e6abdd15af3b126b512fbf0d7ece7",
+  "scripts/upgrade_reviewed_fixture.py": "e4825b7d7ec2c031571d17597e149e47d126f455e2ffcd9596b2fe3635acdf1d",
+  "tests/test_fixture_upgrade.py": "93dbac4b9062f650d7e1e65655047a588902c93ea6b7b69778145e48660b76db"
 }

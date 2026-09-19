@@ -1,7 +1,7 @@
 # Fixture 0.1.1 replacement review
 
-Prepared, not installed. The owner approved the original fixture0.1.0 installation;
-this candidate is a different artifact and needs specific replacement approval.
+Owner explicitly approved this replacement. Not yet installed: mobile SSH requires
+owner sudo authentication. No renewed approval is needed for this exact candidate.
 Do not rerun scripts/install_reviewed_fixture.py: it targets the old package and
 correctly refuses an existing installation.
 
@@ -32,3 +32,10 @@ Previous artifact (already retained): dev.devicebridge.fixture_0.1.0-2+debug,
 SHA256 9e9b807e7b87d3118f9ce84245f50e3ba82e254fa0a995cf76fa55b9b728acc9.
 Restoring it would restore the previously crashing version, not a known-good app.
 Any downgrade/removal must be owner-approved; neither is automatic or tested.
+
+The scoped owner upgrade script is scripts/upgrade_reviewed_fixture.py. It checks
+previous version/status and file hashes, retains both verified package versions in
+new protected root staging, performs a dry run, upgrades with --no-triggers and
+registers only the fixture. It never downgrades automatically. A bounded timeout
+may leave a partial outcome; inspect the root staging journal rather than retry.
+Installer SHA256: e4825b7d7ec2c031571d17597e149e47d126f455e2ffcd9596b2fe3635acdf1d.

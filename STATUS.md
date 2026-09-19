@@ -305,3 +305,19 @@ Candidate compiled/signed/packaged on phone; package control has no scripts, dat
 contains only six fixture bundle files. Hashes: evidence/fixture-candidate-preflight.json.
 Native build is a pass; candidate launch is NOT tested and crash fix NOT confirmed.
 Host suite 21 Node + 49 Python =70 tests passed, plus syntax checks.
+
+## Approved fixture replacement staged — 2026-09-19
+
+Owner explicitly confirmed replacement approval. Read-only SSH preflight verified
+uid501, expected installed0.1.0 binary/status and candidate package hash; sudo -n
+still requires a password. Prepared scoped owner upgrade with prior-version/file
+collision checks, protected previous/candidate package retention, dry-run guard,
+no-trigger install, new-file verification, per-app registration and outcome journal.
+Staged script on phone; its read-only Python preflight verifies all previous files
+and both packages. Upgrade was NOT executed. Owner local sudo authentication is
+the remaining immediate prerequisite; no new approval is needed for this artifact.
+
+Three upgrade test cases pass (including both settled and triggers-awaited prior
+state): unexpected version, changed files and failed dry-run all stop mutations;
+prior package retained before attempted install. Host totals:21 Node +52 Python
+=73 passes; syntax checks pass. Runtime launch and crash fix remain unverified.

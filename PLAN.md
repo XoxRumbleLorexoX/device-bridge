@@ -68,3 +68,5 @@ Owner installer reports fixture files verified and registered; triggers-awaited 
 Fixture manual launch failed per owner. Restore phone reachability, collect only fixture crash diagnostics, fix evidence-backed cause and missing icon, then build/review replacement before deployment.
 
 Crash summaries collected. Arm64-only fixture with icon built/reviewed as a hypothesis test; request specific replacement approval before upgrade. Keep prior package and distinguish build success from runtime success.
+
+Fixture0.1.1 approval received and scoped upgrade staged/preflighted. Owner runs hash-pinned sudo command; next verify installed files/registration then manual launch once.
