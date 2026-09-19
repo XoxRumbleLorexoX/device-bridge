@@ -1,0 +1,8 @@
+Package: dev.devicebridge.fixture
+Name: Device Bridge Fixture
+Version: 0.1.0
+Architecture: iphoneos-arm64
+Description: Benign offline test UI with known targets and Unicode echo.
+Maintainer: Device Bridge owner
+Author: Device Bridge contributors
+Section: Development

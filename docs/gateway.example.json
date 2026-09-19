@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "device_id": "00000000-0000-4000-8000-000000000001",
+  "principal": "operator",
+  "operator_uid": 501,
+  "host": "192.0.2.10",
+  "port": 22,
+  "user": "root",
+  "known_hosts": "/etc/device-bridge/known_hosts",
+  "identity_file": "/etc/device-bridge/runtime/ssh_key",
+  "credential_file": "/etc/device-bridge/runtime/device_credential",
+  "fixture_app": "dev.devicebridge.fixture"
+}

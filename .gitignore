@@ -1,0 +1,21 @@
+node_modules/
+build/
+__pycache__/
+*.pyc
+*.pem
+*.key
+*.sqlite*
+.DS_Store
+
+# Local authentication, owner state and transfer artifacts
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.mobileprovision
+*.tar.gz
+*.deb
+*.log
+known_hosts
+authorized_keys

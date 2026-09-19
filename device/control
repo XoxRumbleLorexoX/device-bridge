@@ -1,0 +1,10 @@
+Package: dev.devicebridge.ui
+Name: Device Bridge UI (experimental fixture only)
+Version: 0.1.0
+Architecture: iphoneos-arm64
+Description: Restricted local UI executor; requires independently administered SSH helper.
+Maintainer: Device Bridge owner
+Author: Device Bridge contributors; ios-mcp modules by witchan
+Section: Development
+Depends: mobilesubstrate
+Conflicts: com.witchan.ios-mcp, dev.adrian.jb-p1lot

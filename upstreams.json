@@ -1,0 +1,23 @@
+{
+  "ios-mcp": {
+    "path": "../ios-mcp",
+    "commit": "38cafd5fbda7a4dcb3821b94cbb3523fc905c0b2",
+    "license": "MIT project modules only",
+    "role": "selected UI executor modules",
+    "url": "https://github.com/witchan/ios-mcp.git"
+  },
+  "jb-p1lot": {
+    "path": "../jb-p1lot",
+    "commit": "9bedf513a56786771c83f6e58c0ddc499033aaf4",
+    "license": "GPL-3.0",
+    "role": "evaluated; no source reused",
+    "url": "https://github.com/castdrian/jb-p1lot.git"
+  },
+  "mobile-mcp": {
+    "path": "../mobile-mcp",
+    "commit": "63a5974d9bfa5b66d1ee4d1b0945df3ebea18b11",
+    "license": "Apache-2.0",
+    "role": "evaluated adapter design; no source reused",
+    "url": "https://github.com/mobile-next/mobile-mcp.git"
+  }
+}

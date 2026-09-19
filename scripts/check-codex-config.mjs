@@ -1,0 +1,11 @@
+import { execFileSync } from 'node:child_process';
+import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+import { randomBytes } from 'node:crypto';
+const name = 'bridge_schema_check_' + randomBytes(6).toString('hex');
+const args = [fileURLToPath(new URL('../src/cli.mjs', import.meta.url)), 'serve', '--config', '/etc/device-bridge/gateway.json'];
+const result = execFileSync('codex', ['-c', `mcp_servers.${name}.command=${JSON.stringify(process.execPath)}`, '-c', `mcp_servers.${name}.args=${JSON.stringify(args)}`, 'mcp', 'get', name, '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+const parsed = JSON.parse(result);
+assert.equal(parsed.transport.command, process.execPath);
+assert.deepEqual(parsed.transport.args, args);
+console.log('Installed Codex accepted generated stdio command/args via temporary CLI overrides; no configuration file changed.');

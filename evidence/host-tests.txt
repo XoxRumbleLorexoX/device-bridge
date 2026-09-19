@@ -1,0 +1,88 @@
+Command: npm test
+Working directory: device-bridge
+Category: unit and simulated integration only; no iPhone access
+Exit code: 0
+
+> device-bridge@0.1.0 test
+> node --test tests/*.test.mjs && python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+TAP version 13
+# Subtest: SDK negotiation and stable tool list expose no broad powers
+ok 1 - SDK negotiation and stable tool list expose no broad powers
+  ---
+  duration_ms: 252.960673
+  ...
+# Subtest: device identity and deadlines fail before transport
+ok 2 - device identity and deadlines fail before transport
+  ---
+  duration_ms: 20.708409
+  ...
+# Subtest: typed insertion carries identity, fence, scope and never appends newline
+ok 3 - typed insertion carries identity, fence, scope and never appends newline
+  ---
+  duration_ms: 33.90364
+  ...
+# Subtest: MCP images are image content and removed from structured/text content
+ok 4 - MCP images are image content and removed from structured/text content
+  ---
+  duration_ms: 0.323451
+  ...
+# Subtest: transport uncertainty is preserved and never retried
+ok 5 - transport uncertainty is preserved and never retried
+  ---
+  duration_ms: 18.455003
+  ...
+# Subtest: SSH disables ambient config, forwarding, agent access, shell interpolation and TOFU
+ok 6 - SSH disables ambient config, forwarding, agent access, shell interpolation and TOFU
+  ---
+  duration_ms: 1.975233
+  ...
+# Subtest: SIMULATED stdio SDK -> gateway -> real policy helper: session, Unicode, verify, cancel, revoke
+ok 7 - SIMULATED stdio SDK -> gateway -> real policy helper: session, Unicode, verify, cancel, revoke
+  ---
+  duration_ms: 3037.526817
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4218.546284
+test_ambiguous_labels_require_explicit_reference (test_helper.HelperTests.test_ambiguous_labels_require_explicit_reference) ... ok
+test_cancel_during_preflight_prevents_dispatch (test_helper.HelperTests.test_cancel_during_preflight_prevents_dispatch) ... ok
+test_capabilities_do_not_claim_hardware_passes (test_helper.HelperTests.test_capabilities_do_not_claim_hardware_passes) ... ok
+test_control_characters_and_oversized_unicode_never_submit (test_helper.HelperTests.test_control_characters_and_oversized_unicode_never_submit) ... ok
+test_deadline_and_wrong_fence (test_helper.HelperTests.test_deadline_and_wrong_fence) ... ok
+test_duplicate_mutation_not_replayed (test_helper.HelperTests.test_duplicate_mutation_not_replayed) ... ok
+test_full_journal_does_not_disable_stop_or_status (test_helper.HelperTests.test_full_journal_does_not_disable_stop_or_status) ... ok
+test_locked_unknown_and_sensitive_apps_fail_closed (test_helper.HelperTests.test_locked_unknown_and_sensitive_apps_fail_closed) ... ok
+test_lost_ack_remains_unknown_across_helper_restart (test_helper.HelperTests.test_lost_ack_remains_unknown_across_helper_restart) ... ok
+test_missing_revoked_and_wrong_audience_credentials (test_helper.HelperTests.test_missing_revoked_and_wrong_audience_credentials) ... ok
+test_only_latest_observation_is_actionable (test_helper.HelperTests.test_only_latest_observation_is_actionable) ... ok
+test_out_of_bounds_and_nonfinite_rect (test_helper.HelperTests.test_out_of_bounds_and_nonfinite_rect) ... ok
+test_pending_record_never_replayed (test_helper.HelperTests.test_pending_record_never_replayed) ... ok
+test_policy_symlink_and_world_readable_rejected (test_helper.HelperTests.test_policy_symlink_and_world_readable_rejected) ... ok
+test_read_grant_cannot_mutate (test_helper.HelperTests.test_read_grant_cannot_mutate) ... ok
+test_revocation_during_preflight_prevents_dispatch (test_helper.HelperTests.test_revocation_during_preflight_prevents_dispatch) ... ok
+test_session_open_duplicate_returns_same_session (test_helper.HelperTests.test_session_open_duplicate_returns_same_session) ... ok
+test_shared_lease_is_fenced_and_cancel_disables_it (test_helper.HelperTests.test_shared_lease_is_fenced_and_cancel_disables_it) ... ok
+test_single_writer_and_cancel (test_helper.HelperTests.test_single_writer_and_cancel) ... ok
+test_stale_epoch_orientation_tree_and_process (test_helper.HelperTests.test_stale_epoch_orientation_tree_and_process) ... ok
+test_stop_and_status_without_springboard (test_helper.HelperTests.test_stop_and_status_without_springboard) ... ok
+test_unapproved_grants_generic_bypass_and_injection_denied (test_helper.HelperTests.test_unapproved_grants_generic_bypass_and_injection_denied) ... ok
+test_unauthorized_request_cannot_overwrite_ledger (test_helper.HelperTests.test_unauthorized_request_cannot_overwrite_ledger) ... ok
+test_unicode_verified_and_no_image_persisted (test_helper.HelperTests.test_unicode_verified_and_no_image_persisted) ... ok
+test_expired_request_never_connects (test_transport.UnixTransportTests.test_expired_request_never_connects) ... ok
+test_fragmented_frames (test_transport.UnixTransportTests.test_fragmented_frames) ... ok
+test_missing_socket_recovery_is_not_offline_helper (test_transport.UnixTransportTests.test_missing_socket_recovery_is_not_offline_helper) ... ok
+test_native_error_preserved (test_transport.UnixTransportTests.test_native_error_preserved) ... ok
+test_oversized_response_rejected (test_transport.UnixTransportTests.test_oversized_response_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 29 tests in 0.542s
+
+OK
+

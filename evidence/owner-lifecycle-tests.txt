@@ -1,0 +1,143 @@
+
+> device-bridge@0.1.0 test
+> node --test tests/*.test.mjs && python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+TAP version 13
+# Subtest: SDK negotiation and stable tool list expose no broad powers
+ok 1 - SDK negotiation and stable tool list expose no broad powers
+  ---
+  duration_ms: 133.677069
+  ...
+# Subtest: device identity and deadlines fail before transport
+ok 2 - device identity and deadlines fail before transport
+  ---
+  duration_ms: 18.618994
+  ...
+# Subtest: typed insertion carries identity, fence, scope and never appends newline
+ok 3 - typed insertion carries identity, fence, scope and never appends newline
+  ---
+  duration_ms: 36.504741
+  ...
+# Subtest: MCP images are image content and removed from structured/text content
+ok 4 - MCP images are image content and removed from structured/text content
+  ---
+  duration_ms: 0.619442
+  ...
+# Subtest: transport uncertainty is preserved and never retried
+ok 5 - transport uncertainty is preserved and never retried
+  ---
+  duration_ms: 29.054169
+  ...
+# Subtest: SSH disables ambient config, forwarding, agent access, shell interpolation and TOFU
+ok 6 - SSH disables ambient config, forwarding, agent access, shell interpolation and TOFU
+  ---
+  duration_ms: 2.776643
+  ...
+# Subtest: SIMULATED stdio SDK -> gateway -> real policy helper: session, Unicode, verify, cancel, revoke
+ok 7 - SIMULATED stdio SDK -> gateway -> real policy helper: session, Unicode, verify, cancel, revoke
+  ---
+  duration_ms: 2918.315199
+  ...
+# Subtest: pre-aborted mutation starts no SSH process and sends no input
+ok 8 - pre-aborted mutation starts no SSH process and sends no input
+  ---
+  duration_ms: 4.79512
+  ...
+# Subtest: invalid deadlines start no SSH process
+ok 9 - invalid deadlines start no SSH process
+  ---
+  duration_ms: 0.780319
+  ...
+# Subtest: abort during spawn does not write the mutation and still revokes its session
+ok 10 - abort during spawn does not write the mutation and still revokes its session
+  ---
+  duration_ms: 7.952328
+  ...
+# Subtest: in-flight abort awaits separate authenticated cancellation and never resends input
+ok 11 - in-flight abort awaits separate authenticated cancellation and never resends input
+  ---
+  duration_ms: 5.165026
+  ...
+# Subtest: lost acknowledgement and failed cancellation remain explicitly uncertain
+ok 12 - lost acknowledgement and failed cancellation remain explicitly uncertain
+  ---
+  duration_ms: 1.212143
+  ...
+# Subtest: deadline timeout cancels the session without replay
+ok 13 - deadline timeout cancels the session without replay
+  ---
+  duration_ms: 54.74888
+  ...
+# Subtest: valid mutation acknowledgement requires no cancellation or retry
+ok 14 - valid mutation acknowledgement requires no cancellation or retry
+  ---
+  duration_ms: 0.878289
+  ...
+# Subtest: wrong response identity does not become a successful mutation
+ok 15 - wrong response identity does not become a successful mutation
+  ---
+  duration_ms: 1.732539
+  ...
+# Subtest: a read failure does not cancel the writer session
+ok 16 - a read failure does not cancel the writer session
+  ---
+  duration_ms: 0.8347
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3950.205646
+test_ambiguous_labels_require_explicit_reference (test_helper.HelperTests.test_ambiguous_labels_require_explicit_reference) ... ok
+test_cancel_during_preflight_prevents_dispatch (test_helper.HelperTests.test_cancel_during_preflight_prevents_dispatch) ... ok
+test_capabilities_do_not_claim_hardware_passes (test_helper.HelperTests.test_capabilities_do_not_claim_hardware_passes) ... ok
+test_control_characters_and_oversized_unicode_never_submit (test_helper.HelperTests.test_control_characters_and_oversized_unicode_never_submit) ... ok
+test_deadline_and_wrong_fence (test_helper.HelperTests.test_deadline_and_wrong_fence) ... ok
+test_duplicate_mutation_not_replayed (test_helper.HelperTests.test_duplicate_mutation_not_replayed) ... ok
+test_full_journal_does_not_disable_stop_or_status (test_helper.HelperTests.test_full_journal_does_not_disable_stop_or_status) ... ok
+test_locked_unknown_and_sensitive_apps_fail_closed (test_helper.HelperTests.test_locked_unknown_and_sensitive_apps_fail_closed) ... ok
+test_lost_ack_remains_unknown_across_helper_restart (test_helper.HelperTests.test_lost_ack_remains_unknown_across_helper_restart) ... ok
+test_missing_revoked_and_wrong_audience_credentials (test_helper.HelperTests.test_missing_revoked_and_wrong_audience_credentials) ... ok
+test_only_latest_observation_is_actionable (test_helper.HelperTests.test_only_latest_observation_is_actionable) ... ok
+test_out_of_bounds_and_nonfinite_rect (test_helper.HelperTests.test_out_of_bounds_and_nonfinite_rect) ... ok
+test_pending_record_never_replayed (test_helper.HelperTests.test_pending_record_never_replayed) ... ok
+test_policy_symlink_and_world_readable_rejected (test_helper.HelperTests.test_policy_symlink_and_world_readable_rejected) ... ok
+test_read_grant_cannot_mutate (test_helper.HelperTests.test_read_grant_cannot_mutate) ... ok
+test_revocation_during_preflight_prevents_dispatch (test_helper.HelperTests.test_revocation_during_preflight_prevents_dispatch) ... ok
+test_session_open_duplicate_returns_same_session (test_helper.HelperTests.test_session_open_duplicate_returns_same_session) ... ok
+test_shared_lease_is_fenced_and_cancel_disables_it (test_helper.HelperTests.test_shared_lease_is_fenced_and_cancel_disables_it) ... ok
+test_single_writer_and_cancel (test_helper.HelperTests.test_single_writer_and_cancel) ... ok
+test_stale_epoch_orientation_tree_and_process (test_helper.HelperTests.test_stale_epoch_orientation_tree_and_process) ... ok
+test_stop_and_status_without_springboard (test_helper.HelperTests.test_stop_and_status_without_springboard) ... ok
+test_unapproved_grants_generic_bypass_and_injection_denied (test_helper.HelperTests.test_unapproved_grants_generic_bypass_and_injection_denied) ... ok
+test_unauthorized_request_cannot_overwrite_ledger (test_helper.HelperTests.test_unauthorized_request_cannot_overwrite_ledger) ... ok
+test_unicode_verified_and_no_image_persisted (test_helper.HelperTests.test_unicode_verified_and_no_image_persisted) ... ok
+test_disconnected_and_half_closed_helper_is_rejected (test_native_peer.NativePeerTests.test_disconnected_and_half_closed_helper_is_rejected) ... ok
+test_default_grant_read_only_and_expiry_bounded_by_credential (test_owner.OwnerLifecycleTests.test_default_grant_read_only_and_expiry_bounded_by_credential) ... ok
+test_existing_credential_and_broken_symlink_are_preserved (test_owner.OwnerLifecycleTests.test_existing_credential_and_broken_symlink_are_preserved) ... ok
+test_existing_shared_data_never_gets_overwritten (test_owner.OwnerLifecycleTests.test_existing_shared_data_never_gets_overwritten) ... ok
+test_fresh_setup_protects_secrets_and_starts_without_grants (test_owner.OwnerLifecycleTests.test_fresh_setup_protects_secrets_and_starts_without_grants) ... ok
+test_init_ordinary_write_failure_cleans_only_new_files (test_owner.OwnerLifecycleTests.test_init_ordinary_write_failure_cleans_only_new_files) ... ok
+test_missing_credential_output_leaves_no_state (test_owner.OwnerLifecycleTests.test_missing_credential_output_leaves_no_state) ... ok
+test_owner_lock_rejects_concurrent_mutation_without_changing_policy (test_owner.OwnerLifecycleTests.test_owner_lock_rejects_concurrent_mutation_without_changing_policy) ... ok
+test_resume_without_stop_still_clears_old_grants_and_sessions (test_owner.OwnerLifecycleTests.test_resume_without_stop_still_clears_old_grants_and_sessions) ... ok
+test_rotation_preserves_old_output_and_invalidates_sessions (test_owner.OwnerLifecycleTests.test_rotation_preserves_old_output_and_invalidates_sessions) ... ok
+test_stop_and_resume_never_restore_previous_grants (test_owner.OwnerLifecycleTests.test_stop_and_resume_never_restore_previous_grants) ... ok
+test_stop_stays_fail_closed_if_journal_is_corrupt (test_owner.OwnerLifecycleTests.test_stop_stays_fail_closed_if_journal_is_corrupt) ... ok
+test_symlink_journal_never_modifies_another_database (test_owner.OwnerLifecycleTests.test_symlink_journal_never_modifies_another_database) ... ok
+test_symlink_policy_and_lock_are_rejected (test_owner.OwnerLifecycleTests.test_symlink_policy_and_lock_are_rejected) ... ok
+test_uninstall_revokes_but_preserves_unrelated_files_and_evidence (test_owner.OwnerLifecycleTests.test_uninstall_revokes_but_preserves_unrelated_files_and_evidence) ... ok
+test_expired_request_never_connects (test_transport.UnixTransportTests.test_expired_request_never_connects) ... ok
+test_fragmented_frames (test_transport.UnixTransportTests.test_fragmented_frames) ... ok
+test_missing_socket_recovery_is_not_offline_helper (test_transport.UnixTransportTests.test_missing_socket_recovery_is_not_offline_helper) ... ok
+test_native_error_preserved (test_transport.UnixTransportTests.test_native_error_preserved) ... ok
+test_oversized_response_rejected (test_transport.UnixTransportTests.test_oversized_response_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 44 tests in 1.499s
+
+OK
