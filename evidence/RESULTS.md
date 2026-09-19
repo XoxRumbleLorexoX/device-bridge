@@ -313,3 +313,38 @@ An independent read-only SSH recheck failed before running the remote command
 (connection closed, shared SSH channel unavailable). The result above is owner
 terminal evidence, not a fresh agent-side verification. No executor, control grant,
 restart or helper deployment occurred. Private container/bootstrap paths omitted.
+
+## Fixture launch failure / diagnostics pending — 2026-09-19
+
+Owner reports the fixture crashes on launch and has no icon. Source Info.plist
+contains no icon resources, confirming the icon omission; crash cause is unknown.
+Owner changed network address; public ECDSA scan matched the existing accepted
+pin. Reopened owner SSH master reports locally alive, but diagnostic request
+returned no output and a separate five-second TCP/SSH probe timed out. Cancelled
+only the agent diagnostic client (exit143), leaving owner master unchanged. No
+crash report was retrieved, no package/signing changes or restarts performed.
+Resume crash-specific read-only collection after actual phone reachability is
+restored. Do not infer code-signing or entitlement cause without crash evidence.
+
+## Fixture crash diagnosis and replacement candidate — 2026-09-19
+
+Slower bounded SSH requests succeeded as uid501. Two latest fixture-only crash
+summaries show EXC_BAD_ACCESS/SIGBUS, top frames libobjc readClass, map_images and
+dyld initialization, before app UI. Reports do not classify termination as code
+signing. Root cause remains unproven; no raw reports, device/container identifiers
+or unrelated app logs retained. Fixture is install ok triggers-awaited, awaiting
+uikittools. Its read-only inspected trigger handler invokes uicache -a; not run.
+
+A minimal Foundation runtime probe compiled/signed as arm64 but was killed with
+signal9 on direct execution. This does not establish the fixture cause; no signing
+entitlement/bypass changes were made or additional probe variants executed.
+
+Prepared fixture0.1.1 as arm64-only to test the architecture hypothesis; kept
+executor architectures unchanged. Added original geometric icon PNGs at 60/120/180
+and bundle metadata; source SVG and optional Pillow-pinned generator included.
+Theos documents arm64e ABI/toolchain constraints at
+https://theos.dev/docs/arm64e-deployment ; these inform the hypothesis, not proof.
+Candidate compiled/signed/packaged on phone; package control has no scripts, data
+contains only six fixture bundle files. Hashes: evidence/fixture-candidate-preflight.json.
+Native build is a pass; candidate launch is NOT tested and crash fix NOT confirmed.
+Host suite 21 Node + 49 Python =70 tests passed, plus syntax checks.

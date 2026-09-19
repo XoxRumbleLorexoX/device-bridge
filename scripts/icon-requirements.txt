@@ -1,0 +1,2 @@
+# Optional icon regeneration only; committed PNGs need no Python imaging dependency.
+Pillow==9.5.0

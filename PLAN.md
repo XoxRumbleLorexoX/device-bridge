@@ -64,3 +64,7 @@ Blocked approval audit: same unanswered specific fixture-install request across 
 Fixture-only approval received. Installer ready and staged; owner sudo authentication needed. Do not ask for approval again for this exact action. Verify actual install/registration after owner executes it.
 
 Owner installer reports fixture files verified and registered; triggers-awaited remains. Next inspect exact trigger fields and test manual fixture launch; reconnect owner SSH for independent verification. Do not reinstall or drain global triggers.
+
+Fixture manual launch failed per owner. Restore phone reachability, collect only fixture crash diagnostics, fix evidence-backed cause and missing icon, then build/review replacement before deployment.
+
+Crash summaries collected. Arm64-only fixture with icon built/reviewed as a hypothesis test; request specific replacement approval before upgrade. Keep prior package and distinguish build success from runtime success.

@@ -18,6 +18,7 @@ def bundle(output):
         (root / 'fixture').mkdir()
         for name in ('main.m', 'Makefile', 'Info.plist', 'control'):
             shutil.copyfile(ROOT / 'fixture' / name, root / 'fixture' / name)
+        shutil.copytree(ROOT / 'fixture/Resources', root / 'fixture/Resources')
         shutil.copyfile(ROOT / 'scripts/device-build-check.sh', root / 'build-check.sh')
         for name in ('LICENSE', 'THIRD_PARTY_NOTICES.md', 'upstreams.json'):
             shutil.copyfile(ROOT / name, root / name)
