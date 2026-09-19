@@ -58,3 +58,5 @@ Authenticated on-device native build passed for both architectures. Next prepare
 Package preflight complete; owner approval required for the concrete fixture-only install in docs/INSTALLATION_REVIEW.md. UI executor activation still requires independent privileged recovery setup and verification.
 
 While fixture-install approval is pending, closed CLI ECDSA pairing gap with strict pinning/parser tests. Continue owner installation/recovery gate after explicit approval.
+
+Blocked approval audit: same unanswered specific fixture-install request across three turns; current artifacts/access revalidated read-only. Resume with explicit owner fixture-install approval; full goal remains incomplete.

@@ -221,3 +221,20 @@ Added explicit --key-type ecdsa with default ED25519 and no implicit fallback.
 Verifier rejects mismatched fingerprints, algorithms, wire labels, endpoint,
 ambiguous scan output and malformed key encoding. No live trust/credential changes.
 Five pairing unit tests added; native package candidates and approval scope unchanged.
+
+## Installation approval gate audit — 2026-09-19
+
+Previous goal turn made progress (ECDSA CLI implementation/tests). The specific
+fixture-install approval has remained unanswered across the package-review turn
+and two automatic continuations. Continuation is not approval for package code
+execution under the owner's explicit permission requirements.
+
+Read-only revalidation: SSH master is alive and account is mobile uid501; reviewed
+fixture package still matches its recorded SHA256; fixture destination, both
+bridge packages and shared helper state remain absent. An SSH master is an access
+channel, not a running build job; no pending build/test is being awaited. All
+independent preparation needed for the next gate is complete. Mark goal blocked
+at this approval boundary, not complete. Resume after owner explicitly approves
+the fixture-only installation/registration described in docs/INSTALLATION_REVIEW.md.
+Executor activation, recovery, MCP UI, cross-network and remaining original gates
+remain incomplete. No phone state changed in this audit.
