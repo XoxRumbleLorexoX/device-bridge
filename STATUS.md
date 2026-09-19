@@ -387,6 +387,19 @@ This identifies the restricted-key target; it does not authorize changing it.
 Runtime pairing and host gateway configuration remain the next gate. Screen/UI
 activation remains disabled until that independent recovery path is verified.
 
+## Host gateway verified — 2026-09-19
+
+The owner installed the protected gateway configuration under `/etc/device-bridge`
+using the reviewed installer and completed its nonsecret config file after the
+installer correctly refused a second overwrite attempt. The gateway process now
+loads root-owned configuration and known-host files plus operator-owned 0600
+runtime key/credential files. Real gateway `status` and `capabilities` calls
+returned successfully through the forced-command SSH path. The device reports
+`helper_online: true`, `state: recovery_required`, no UI socket, and no active
+lease; capabilities remain unverified until the restricted UI component is
+installed and an owner-approved fixture session is granted. No UI activation,
+respring, or control grant was performed.
+
 ## Restricted runtime transport verified — 2026-09-19
 
 The owner provisioned a dedicated Ed25519 key with an SSH forced command and
