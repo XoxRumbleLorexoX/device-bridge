@@ -1,0 +1,16 @@
+make: Entering directory '/var/jb/tmp/device-bridge-build-f45txwo0/device-bridge-build/fixture'
+> Making all for application BridgeFixture…
+==> Copying resource files into the application wrapper…
+make[3]: Nothing to be done for 'internal-application-compile'.
+make[3]: Nothing to be done for 'internal-application-compile'.
+make: Leaving directory '/var/jb/tmp/device-bridge-build-f45txwo0/device-bridge-build/fixture'
+make: Entering directory '/var/jb/tmp/device-bridge-build-f45txwo0/device-bridge-build/executor'
+> Making all for tweak DeviceBridgeUI…
+make[3]: Nothing to be done for 'internal-tweak-compile'.
+make[3]: Nothing to be done for 'internal-tweak-compile'.
+make: Leaving directory '/var/jb/tmp/device-bridge-build-f45txwo0/device-bridge-build/executor'
+Compilation finished. Nothing installed or activated.
+/var/jb/usr/bin/bash: line 1: sysctl: command not found
+/var/jb/usr/bin/bash: line 1: sysctl: command not found
+
+Exit: 0

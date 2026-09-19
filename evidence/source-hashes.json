@@ -14,7 +14,7 @@
   "package-lock.json": "273bc8a17e4282728f6e69befb3ce876d4f6ab7b6a0baa43959135127c516b81",
   "package.json": "01c43bfc2fd5e50740438976a6df6d3e2ed578326033a83b1dc54cbf368732a1",
   "scripts/check-codex-config.mjs": "388f629984787d85fdfda3589e1da2b52cb7f81613d5cac797295c8f7e06af29",
-  "scripts/device-build-check.sh": "181ad810d1affd1bbf116f55d4e9d1e7ada74724ab95dfb833713c2b479efa03",
+  "scripts/device-build-check.sh": "afb01c69341be19d569a262e659068dec847ce8fea6429f99c8199fa11efaeff",
   "scripts/prepare_device_bundle.py": "8894bb574d45dc6f78f5d940d3df80a87e3eaf30210027f46e8742fa0e620ab6",
   "scripts/prepare_executor.py": "900666abf26395626801eabe36d9e1f4539b0b8fc38f2e233a0c3c8e8733da9d",
   "scripts/probe-device.sh": "80723b408c9998528ea4deeb6fd597bee0d5677c14fb14f40cc1b72e1d12b76e",

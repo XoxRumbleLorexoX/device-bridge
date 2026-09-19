@@ -218,3 +218,20 @@ Prior BridgeUI syntax/header failures no longer appear. Executor stops compiling
 MCPAXNodeSource.m on 17 unused static functions under -Werror, on both arm64 and
 arm64e. Added -Wno-unused-function matching the pinned upstream Makefile; no
 global warning/error suppression. Native link, install and UI test still pending.
+
+## Authenticated on-device build — 2026-09-19
+
+Owner-opened SSH multiplex connection verified uid=501(mobile). Checked all v3
+source manifest entries, applied reviewed warning fix with a backup, and built
+fixture/executor on-device with 120-second per-target timeouts. Both artifacts
+link/sign for arm64 and arm64e; lipo and SHA256 recorded in
+evidence/native-build-artifacts.json. SystemVersion reports iOS16.2 / 20C65.
+Installed ElleKit1.2 advertises mobilesubstrate compatibility. No bridge packages
+are installed; no helper state or UI socket directory was found.
+
+Initial noninteractive make failed because bash startup emitted Hi into Theos pwd
+output. Explicit bash --noprofile --norc build shells resolve this without editing
+owner startup files. Build succeeded with two sysctl-not-found warnings (host
+parallelism discovery); these did not prevent compilation. Full sanitized native
+output: evidence/native-build.txt. This is a real native build pass, not a UI,
+installation, recovery or remote-network pass. Nothing installed or restarted.

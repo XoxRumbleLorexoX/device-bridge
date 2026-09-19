@@ -6,12 +6,11 @@ independent SSH policy helper. Upstream repositories are preserved.
 
 **Working now:** host CLI and SDK stdio gateway; tested authorization, leases,
 stale-state rejection, durable duplicate/uncertain outcomes; simulated full MCP
-fixture flow. **Not yet working on verified hardware:** native build/install/UI
-control. The initial host lacks Theos/iPhoneOS SDK. The owner reports Theos and an SDK
-on the phone and has transferred a build-only source bundle; compilation and
-authenticated gateway access remain unverified. Remote
-control, development deployment/rollback and operator web page have not passed
-their gates. This is not production-ready or standalone phone control.
+fixture flow. **Native build verified:** fixture and executor compiled, linked and
+signed on the owner phone (iOS 16.2 / 20C65, arm64 + arm64e, Theos SDK 16.5).
+**Not yet verified:** installation, UI control, runtime pairing, remote control,
+deployment/rollback or operator web page. This is not production-ready or
+standalone phone control.
 
 ```sh
 git clone https://github.com/XoxRumbleLorexoX/device-bridge.git

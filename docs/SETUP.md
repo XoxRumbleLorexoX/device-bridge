@@ -1,6 +1,6 @@
 # Setup and first use
 
-**Current gate:** host tests work; iOS source has not compiled or run. The host lacks
+**Current gate:** host tests work; fixture and executor compiled/signed on iOS 16.2 using SDK 16.5, but have not been installed or run. The host lacks
 Theos and an iPhoneOS SDK. The reachable owner's phone is not yet paired: SSH
 authenticated agent access is still needed. The owner accepted a matching saved
 ECDSA pin with unknown prior trust history; mobile key-based login failed. Owner

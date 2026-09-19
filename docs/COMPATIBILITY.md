@@ -3,7 +3,7 @@
 | Configuration | Source implementation | Available/probed | Actually tested |
 |---|---|---|---|
 | macOS host, Node 20.5.0, Python 3.11.4, Codex 0.155.1 | stdio gateway, CLI, SSH client, policy helper | Yes | Unit and simulated integration; generated Codex schema accepted |
-| Owner phone: reported iPhone14,3 / build 20C65 | Intended ios-mcp restricted executor | Owner reports root terminal, /var/jb, Python 3.9.9 with required imports, SQLite 3.39.5, clang 16 targeting arm64 iOS16; SDK/Theos unverified; accepted ECDSA pin matches; bridge SSH authentication failed | Owner-pasted inventory only; no bridge login, native build, install or UI test |
+| Owner phone: reported iPhone14,3 / build 20C65 | Intended ios-mcp restricted executor | Owner reports root terminal, /var/jb, Python 3.9.9 with required imports, SQLite 3.39.5, clang 16 targeting arm64 iOS16; Theos + SDK16.5 compiled both artifacts; accepted ECDSA pin matches; bridge SSH authentication failed | Authenticated mobile SSH; native arm64/arm64e build and artifact hashes verified. No installation/UI test |
 | iOS 15+ rootless arm64/arm64e | Theos build recipe | iPhoneOS SDK/Theos absent; actual bootstrap unknown | None; unverified |
 | Rootful iOS | Upstream modules contain mechanisms; scheme needs actual-target preflight | Unknown | None; unverified |
 | Roothide | Upstream supports its conventions; bridge build has no relocation recipe | Not enabled | Unsupported by current bridge build |

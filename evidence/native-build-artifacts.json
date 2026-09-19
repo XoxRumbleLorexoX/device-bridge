@@ -1,0 +1,22 @@
+{
+  "uid": 501,
+  "artifacts": [
+    {
+      "path": "fixture/.theos/obj/debug/BridgeFixture.app/BridgeFixture",
+      "size": 173952,
+      "sha256": "852dfe3e5504e90f48f8b1e838f54ee3fcfdbdadfc2ec341a02b69b35f341c02",
+      "architectures": "arm64 arm64e"
+    },
+    {
+      "path": "executor/.theos/obj/debug/DeviceBridgeUI.dylib",
+      "size": 1305424,
+      "sha256": "5375a7e5f0cbaad3ab6492765e004ae3755c7f9bb9de099bf1bb0c0706cafba3",
+      "architectures": "arm64 arm64e"
+    }
+  ],
+  "ios": {
+    "ProductVersion": "16.2",
+    "ProductBuildVersion": "20C65"
+  },
+  "hook_package": "ellekit 1.2 iphoneos-arm64 mobilesubstrate (= 99), org.coolstar.libhooker (= 1.6.9)"
+}
