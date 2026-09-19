@@ -452,3 +452,11 @@ channel. A fresh gateway status confirms `state: recovery_required`,
 `helper_online: true`, and no control lease; the UI socket remains present but
 is fail-closed by the STOP latch. This is the documented recovery state after
 the uncertain launch/display incident. No reboot or repeat launch was attempted.
+
+After the owner reported the display responsive, the owner cleared STOP and
+issued a fresh fixture grant. A new session first returned `DEVICE_LOCKED`; it
+was cancelled without input. After the owner unlocked the phone and manually
+opened Bridge Fixture, observation returned `RECOVERY_REQUIRED` after its
+bounded timeout. That session was also cancelled, with no tap, text, or launch
+action dispatched. The real device observation gate therefore remains
+unverified and the UI executor requires diagnosis before another session.
