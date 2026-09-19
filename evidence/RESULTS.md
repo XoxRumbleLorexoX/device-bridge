@@ -374,3 +374,25 @@ Evidence: evidence/fixture-0.1.1-installed.json. Dpkg still awaits uikittools; n
 global trigger handler was run. Actual icon appearance, launch and UI behavior
 remain pending owner observation. Do not call the crash fixed from file hashes.
 No executor/helper deployment, grants or restart occurred.
+
+## Owner-visible fixture feedback — 2026-09-19
+
+Owner reports0.1.1 icon appears, three squares are visible and text can be typed,
+but no visible feedback. This is owner-observed UI launch evidence, not agent
+screenshot/AX/control evidence. The squares are deliberate small target buttons.
+Source inspection found a forced white background with theme-dependent label/text
+colors, allowing white-on-white feedback in dark appearance. User appearance mode
+has not been independently verified; the contrast defect is confirmed in source.
+
+Prepared fixture0.1.2 using systemBackgroundColor/labelColor, explicit input
+background, Button1/2/3 captions, explanatory text and Echo: prefix. Small target
+bounds remain unchanged for later calibration. If matching the echo label through
+MCP, expected_text must include the Echo: prefix; no implicit submission is added.
+Host tests remain73 passes; syntax checks pass. This source change is not yet
+installed. Current owner-approved0.1.1 installation remains unchanged.
+
+Feedback-candidate native build response timed out after110 seconds. No success
+claim or automatic retry; inspect existing candidate/process on restored connection
+before resuming. Remote make was bounded to90 seconds after it started. No package
+installation was requested. Host-tested source is committed separately from native
+verification, which remains unknown for0.1.2.
