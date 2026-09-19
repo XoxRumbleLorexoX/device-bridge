@@ -446,3 +446,9 @@ authenticated gateway and reports stopped with no held contacts. Read-only
 inspection confirms the fixture remains registered and no new crash report was
 created at the checked path. Real element observation and text input are not
 passes until the launch state is resolved with a fresh owner-approved session.
+
+The owner then applied the independent STOP command through the SSH recovery
+channel. A fresh gateway status confirms `state: recovery_required`,
+`helper_online: true`, and no control lease; the UI socket remains present but
+is fail-closed by the STOP latch. This is the documented recovery state after
+the uncertain launch/display incident. No reboot or repeat launch was attempted.
