@@ -396,3 +396,24 @@ claim or automatic retry; inspect existing candidate/process on restored connect
 before resuming. Remote make was bounded to90 seconds after it started. No package
 installation was requested. Host-tested source is committed separately from native
 verification, which remains unknown for0.1.2.
+
+## Independent recovery-helper preparation — 2026-09-19
+
+Connection responsive again. Read-only inventory found helper target parents root
+protected and shared state absent; no feedback-candidate directory was found in
+the checked /tmp namespace, so the timed-out0.1.2 build is still unverified and
+was not replayed. Focus returned to the required independent recovery gate.
+
+Implemented a self-contained owner setup generator/template: exact source payload
+hashes, protected fresh targets, isolated installed-helper CLI checks, bounded
+subprocesses, stopped/revoked final state and no grants. No SSH/service/UI changes.
+Staged owner-helper-setup-v2.py under mobile home and ran read-only preflight on
+phone successfully; no root setup executed. Scope reviewed in docs/HELPER_SETUP_REVIEW.md.
+Host tests77 pass (21 Node +56 Python), syntax checks pass. Four new tests cover
+nonroot denial, payload tampering, preflight-before-write and actual policy state
+checks in an isolated no-UI test harness. Await owner-authenticated execution for
+actual root/helper evidence; do not claim installation from unit tests.
+
+Phone setup-test result:42 isolated Python tests passed on Python3.9.9; full
+output in evidence/phone-helper-setup-tests.txt. No live grant or root deployment
+was created by these tests.

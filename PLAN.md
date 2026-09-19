@@ -74,3 +74,5 @@ Fixture0.1.1 approval received and scoped upgrade staged/preflighted. Owner runs
 Fixture0.1.1 installed hashes verified via SSH. Next owner opens app once and checks Ready, target counter and Unicode echo; if crash recurs collect fresh fixture-only report before further changes.
 
 Owner can see0.1.1 UI/icon. Clarify target buttons; verify typed/tapped feedback.0.1.2 source fixes dark-appearance contrast and labels, pending build evidence/review before any replacement. Screen observation service remains undeployed.
+
+Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to install and test stop/revoke with control disabled. Next provision restricted runtime transport before any UI activation.
