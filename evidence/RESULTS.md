@@ -281,3 +281,20 @@ at this approval boundary, not complete. Resume after owner explicitly approves
 the fixture-only installation/registration described in docs/INSTALLATION_REVIEW.md.
 Executor activation, recovery, MCP UI, cross-network and remaining original gates
 remain incomplete. No phone state changed in this audit.
+
+## Approved fixture step, authentication prerequisite — 2026-09-19
+
+Owner said go ahead to the concrete fixture-only installation/registration. This
+approval persists. SSH remains uid501; sudo -n id reports a password is required.
+No password attempted or requested in chat. Package hash/absent destination were
+reverified. A specific owner-run installer was staged (not executed), with protected
+root staging, expected package hash, dry run, no-triggers install, installed-file
+hashes, per-bundle registration and partial-outcome journal. Phone Python read-only
+preflight passed. Initial staging command had a quoting SyntaxError before any
+write; corrected staging succeeded with matching source hash.
+
+Four installer preflight tests added: nonroot/existing destination/corrupt or
+symlink package/dry-run failure. Host suite: 21 Node + 48 Python = 69 passes;
+syntax checks pass and installer py_compile passes. No live install has occurred.
+Next owner action is sudo authentication for the approved, hash-pinned installer,
+not renewed permission. Executor/restart/grants remain outside this approval.

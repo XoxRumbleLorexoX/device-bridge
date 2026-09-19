@@ -1,6 +1,6 @@
 # First fixture installation review
 
-Status: prepared for owner approval; nothing installed or registered.
+Status: owner explicitly approved fixture-only installation/registration. Execution awaits owner sudo authentication; nothing installed or registered by the agent.
 
 ## Proposed action
 
@@ -60,3 +60,17 @@ verified independently of SpringBoard before any approved activation.
 Both packages are saved locally under ignored build/reviewed-packages with matching
 hashes. The original defective executor 0.1.0-1+debug is not an install candidate.
 See evidence/package-preflight.json for full file metadata and hashes.
+
+## Approved owner installer
+
+`scripts/install_reviewed_fixture.py` implements this exact reviewed package step.
+It is specific to the current artifact/build directory, accepts no password, and
+requires root. It rejects an existing destination/package state, verifies the
+package bytes, stages a protected copy, uses dpkg --no-triggers to avoid executing
+unrelated pending triggers, verifies installed file hashes, and registers only the
+fixture. It retains a protected outcome journal on error and does not retry.
+
+The owner must authenticate in their terminal. Current mobile SSH has no
+noninteractive sudo access. This is an authentication prerequisite, not a new
+approval request. No unrestricted root key/session is required for the agent.
+Installer SHA256: d1e848f9b235b36d341c63ad40a4f9ae8f902c5fe0c344436a50603622123f55.

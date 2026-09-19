@@ -60,3 +60,5 @@ Package preflight complete; owner approval required for the concrete fixture-onl
 While fixture-install approval is pending, closed CLI ECDSA pairing gap with strict pinning/parser tests. Continue owner installation/recovery gate after explicit approval.
 
 Blocked approval audit: same unanswered specific fixture-install request across three turns; current artifacts/access revalidated read-only. Resume with explicit owner fixture-install approval; full goal remains incomplete.
+
+Fixture-only approval received. Installer ready and staged; owner sudo authentication needed. Do not ask for approval again for this exact action. Verify actual install/registration after owner executes it.

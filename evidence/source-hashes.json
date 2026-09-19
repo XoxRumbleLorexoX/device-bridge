@@ -33,5 +33,7 @@
   "tests/transport.test.mjs": "cb6f55235ec1db62aaac224b1317caf53e2406a479b315536885bdc91bcbcc50",
   "upstreams.json": "d07f290f99e04b0302cb87832f016b40f094c5f85314d4de7b575efc5bd2fa52",
   "src/pairing.mjs": "6f8901d90761e3c05448b47a3fdd7cc41887df3650e2c1b91f6adadb67f6f71b",
-  "tests/pairing.test.mjs": "d211a4aaf850009fab95992f16da49a9e4d318bb03c89fb284564704d5397ba1"
+  "tests/pairing.test.mjs": "d211a4aaf850009fab95992f16da49a9e4d318bb03c89fb284564704d5397ba1",
+  "scripts/install_reviewed_fixture.py": "d1e848f9b235b36d341c63ad40a4f9ae8f902c5fe0c344436a50603622123f55",
+  "tests/test_fixture_installer.py": "3828ce8d38da431d28c3755bd71c73b583949c18f12783976ce3879140a21c3b"
 }
