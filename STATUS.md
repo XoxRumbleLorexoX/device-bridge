@@ -400,6 +400,11 @@ lease; capabilities remain unverified until the restricted UI component is
 installed and an owner-approved fixture session is granted. No UI activation,
 respring, or control grant was performed.
 
+The reviewed UI package (`748c29c121e8468e67e86ce117a3052cbf0ec9cea75ee766e6e9a5ac86e2b212`)
+was copied to the phone's mobile-owned temporary path and its SHA-256 was
+verified remotely. It has not been installed or activated. Installation and any
+SpringBoard reload remain explicit owner-approved actions.
+
 ## Restricted runtime transport verified — 2026-09-19
 
 The owner provisioned a dedicated Ed25519 key with an SSH forced command and
