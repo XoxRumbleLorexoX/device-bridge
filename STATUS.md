@@ -405,6 +405,12 @@ was copied to the phone's mobile-owned temporary path and its SHA-256 was
 verified remotely. It has not been installed or activated. Installation and any
 SpringBoard reload remain explicit owner-approved actions.
 
+After owner approval, `scripts/install_reviewed_ui.py` was staged on the phone
+with SHA-256 `c02cd3083dbadec8a7ab5b32c9f385c97012f9c548bba9f51f4dbefebf3c6bf5`.
+Its package source hash was rechecked remotely. The script uses a protected
+root staging directory, `dpkg --no-act --no-triggers` before installation,
+exact dylib/plist hash verification, and no reload. It has not been executed.
+
 ## Restricted runtime transport verified — 2026-09-19
 
 The owner provisioned a dedicated Ed25519 key with an SSH forced command and
