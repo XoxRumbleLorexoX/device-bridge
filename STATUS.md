@@ -411,6 +411,12 @@ Its package source hash was rechecked remotely. The script uses a protected
 root staging directory, `dpkg --no-act --no-triggers` before installation,
 exact dylib/plist hash verification, and no reload. It has not been executed.
 
+Owner execution completed the approved install. Independent mobile verification
+matches the expected dylib and plist hashes, and the installed package reports
+`0.1.0-2+debug` with `triggers-awaited`. Gateway status remains
+`recovery_required` with `ui_socket_present: false`, as expected before a
+SpringBoard reload. No grant or input was issued.
+
 ## Restricted runtime transport verified — 2026-09-19
 
 The owner provisioned a dedicated Ed25519 key with an SSH forced command and
