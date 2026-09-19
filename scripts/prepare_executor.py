@@ -28,6 +28,7 @@ def prepare(destination):
         shutil.copyfile(upstream / name, destination / name)
     for name in ['BridgeUI.m', 'BridgePeer.h', 'QuietLogger.m', 'Makefile', 'DeviceBridgeUI.plist', 'control']:
         shutil.copyfile(ROOT / 'device' / name, destination / name)
+    shutil.copyfile(ROOT / 'LICENSE', destination / 'DEVICE_BRIDGE_LICENSE')
     accessibility = destination / 'AccessibilityManager.m'
     source = accessibility.read_text()
     marker = 'static const BOOL MCPEnableAXUIClientBootstrap = YES;'

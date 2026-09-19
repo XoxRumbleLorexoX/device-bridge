@@ -1,0 +1,45 @@
+test_ambiguous_labels_require_explicit_reference (test_helper.HelperTests) ... ok
+test_cancel_during_preflight_prevents_dispatch (test_helper.HelperTests) ... ok
+test_capabilities_do_not_claim_hardware_passes (test_helper.HelperTests) ... ok
+test_control_characters_and_oversized_unicode_never_submit (test_helper.HelperTests) ... ok
+test_deadline_and_wrong_fence (test_helper.HelperTests) ... ok
+test_duplicate_mutation_not_replayed (test_helper.HelperTests) ... ok
+test_full_journal_does_not_disable_stop_or_status (test_helper.HelperTests) ... ok
+test_locked_unknown_and_sensitive_apps_fail_closed (test_helper.HelperTests) ... ok
+test_lost_ack_remains_unknown_across_helper_restart (test_helper.HelperTests) ... ok
+test_missing_revoked_and_wrong_audience_credentials (test_helper.HelperTests) ... ok
+test_only_latest_observation_is_actionable (test_helper.HelperTests) ... ok
+test_out_of_bounds_and_nonfinite_rect (test_helper.HelperTests) ... ok
+test_pending_record_never_replayed (test_helper.HelperTests) ... ok
+test_policy_symlink_and_world_readable_rejected (test_helper.HelperTests) ... ok
+test_read_grant_cannot_mutate (test_helper.HelperTests) ... ok
+test_revocation_during_preflight_prevents_dispatch (test_helper.HelperTests) ... ok
+test_session_open_duplicate_returns_same_session (test_helper.HelperTests) ... ok
+test_shared_lease_is_fenced_and_cancel_disables_it (test_helper.HelperTests) ... ok
+test_single_writer_and_cancel (test_helper.HelperTests) ... ok
+test_stale_epoch_orientation_tree_and_process (test_helper.HelperTests) ... ok
+test_stop_and_status_without_springboard (test_helper.HelperTests) ... ok
+test_unapproved_grants_generic_bypass_and_injection_denied (test_helper.HelperTests) ... ok
+test_unauthorized_request_cannot_overwrite_ledger (test_helper.HelperTests) ... ok
+test_unicode_verified_and_no_image_persisted (test_helper.HelperTests) ... ok
+test_default_grant_read_only_and_expiry_bounded_by_credential (test_owner.OwnerLifecycleTests) ... ok
+test_existing_credential_and_broken_symlink_are_preserved (test_owner.OwnerLifecycleTests) ... ok
+test_existing_shared_data_never_gets_overwritten (test_owner.OwnerLifecycleTests) ... ok
+test_fresh_setup_protects_secrets_and_starts_without_grants (test_owner.OwnerLifecycleTests) ... ok
+test_init_ordinary_write_failure_cleans_only_new_files (test_owner.OwnerLifecycleTests) ... ok
+test_missing_credential_output_leaves_no_state (test_owner.OwnerLifecycleTests) ... ok
+test_owner_lock_rejects_concurrent_mutation_without_changing_policy (test_owner.OwnerLifecycleTests) ... ok
+test_resume_without_stop_still_clears_old_grants_and_sessions (test_owner.OwnerLifecycleTests) ... ok
+test_rotation_preserves_old_output_and_invalidates_sessions (test_owner.OwnerLifecycleTests) ... ok
+test_stop_and_resume_never_restore_previous_grants (test_owner.OwnerLifecycleTests) ... ok
+test_stop_stays_fail_closed_if_journal_is_corrupt (test_owner.OwnerLifecycleTests) ... ok
+test_symlink_journal_never_modifies_another_database (test_owner.OwnerLifecycleTests) ... ok
+test_symlink_policy_and_lock_are_rejected (test_owner.OwnerLifecycleTests) ... ok
+test_uninstall_revokes_but_preserves_unrelated_files_and_evidence (test_owner.OwnerLifecycleTests) ... ok
+
+----------------------------------------------------------------------
+Ran 38 tests in 0.524s
+
+OK
+
+Exit: 0

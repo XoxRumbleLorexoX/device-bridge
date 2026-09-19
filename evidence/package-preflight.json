@@ -1,0 +1,77 @@
+{
+  "installed": false,
+  "packages": [
+    {
+      "file": "fixture/packages/dev.devicebridge.fixture_0.1.0-2+debug_iphoneos-arm64.deb",
+      "sha256": "9e9b807e7b87d3118f9ce84245f50e3ba82e254fa0a995cf76fa55b9b728acc9",
+      "size": 13192,
+      "files": [
+        {
+          "path": "var/jb/Applications/BridgeFixture.app/BridgeFixture",
+          "mode": "0o755",
+          "size": 173952,
+          "sha256": "852dfe3e5504e90f48f8b1e838f54ee3fcfdbdadfc2ec341a02b69b35f341c02"
+        },
+        {
+          "path": "var/jb/Applications/BridgeFixture.app/Info.plist",
+          "mode": "0o644",
+          "size": 871,
+          "sha256": "2633dbeba0bcbe44087a659ce6a53f2759735a0abc54fb550a488dae62739df7"
+        },
+        {
+          "path": "var/jb/Applications/BridgeFixture.app/LICENSE",
+          "mode": "0o644",
+          "size": 1083,
+          "sha256": "cda3de542bded2ed96971e6fbebfddcb9e1d4ad755222225b74755ec0b5c1e7d"
+        }
+      ],
+      "maintainer_scripts": [],
+      "control": "Package: dev.devicebridge.fixture\nName: Device Bridge Fixture\nDescription: Benign offline test UI with known targets and Unicode echo.\nMaintainer: Device Bridge owner\nAuthor: Device Bridge contributors\nSection: Development\nArchitecture: iphoneos-arm64\nVersion: 0.1.0-2+debug\nInstalled-Size: 180\n"
+    },
+    {
+      "file": "executor/packages/dev.devicebridge.ui_0.1.0-2+debug_iphoneos-arm64.deb",
+      "sha256": "748c29c121e8468e67e86ce117a3052cbf0ec9cea75ee766e6e9a5ac86e2b212",
+      "size": 304648,
+      "files": [
+        {
+          "path": "var/jb/Library/MobileSubstrate/DynamicLibraries/DeviceBridgeUI.dylib",
+          "mode": "0o755",
+          "size": 1305424,
+          "sha256": "5375a7e5f0cbaad3ab6492765e004ae3755c7f9bb9de099bf1bb0c0706cafba3"
+        },
+        {
+          "path": "var/jb/Library/MobileSubstrate/DynamicLibraries/DeviceBridgeUI.plist",
+          "mode": "0o644",
+          "size": 55,
+          "sha256": "f0f5f53f83d5a79930ce9b6ee491e6674d911918564049111468f40f625d791f"
+        },
+        {
+          "path": "var/jb/usr/share/doc/device-bridge/DEVICE_BRIDGE_LICENSE",
+          "mode": "0o644",
+          "size": 1083,
+          "sha256": "cda3de542bded2ed96971e6fbebfddcb9e1d4ad755222225b74755ec0b5c1e7d"
+        },
+        {
+          "path": "var/jb/usr/share/doc/device-bridge/LICENSE",
+          "mode": "0o644",
+          "size": 1064,
+          "sha256": "8c0071d4e3af0f3ded6d6401004e2da4d5610f8fa0d9849ab57db8fd7b3d1133"
+        },
+        {
+          "path": "var/jb/usr/share/doc/device-bridge/NOTICE",
+          "mode": "0o644",
+          "size": 883,
+          "sha256": "0220d3670add7550177b308741b846ea9c3b87520272124468fff46cce241757"
+        },
+        {
+          "path": "var/jb/usr/share/doc/device-bridge/THIRD_PARTY_NOTICES.md",
+          "mode": "0o644",
+          "size": 3408,
+          "sha256": "e31bd25118adf463593df4ba70f403d8ea0dc25164e1858e41a857d6b977d1e7"
+        }
+      ],
+      "maintainer_scripts": [],
+      "control": "Package: dev.devicebridge.ui\nName: Device Bridge UI (experimental fixture only)\nDescription: Restricted local UI executor; requires independently administered SSH helper.\nMaintainer: Device Bridge owner\nAuthor: Device Bridge contributors; ios-mcp modules by witchan\nSection: Development\nDepends: mobilesubstrate\nConflicts: com.witchan.ios-mcp, dev.adrian.jb-p1lot\nArchitecture: iphoneos-arm64\nVersion: 0.1.0-2+debug\nInstalled-Size: 1296\n"
+    }
+  ]
+}

@@ -194,3 +194,20 @@ owner startup files. Build succeeded with two sysctl-not-found warnings (host
 parallelism discovery); these did not prevent compilation. Full sanitized native
 output: evidence/native-build.txt. This is a real native build pass, not a UI,
 installation, recovery or remote-network pass. Nothing installed or restarted.
+
+## Package and runtime preflight — 2026-09-19
+
+Packaged both components as mobile without installation. Corrected doubled
+rootless documentation prefix and added integration-license coverage to both
+packages, then rebuilt. Reviewed final control/data archives: only expected
+regular files/directories, root ownership, no maintainer scripts, links, setuid
+bits or traversal. Exact artifacts/file hashes: evidence/package-preflight.json.
+Retrieved both reviewed packages to ignored host build storage and verified hashes.
+Fixture/UI package status and all installation destinations are absent.
+
+38 helper/owner tests passed on phone Python3.9.9 in temporary mobile-owned state;
+these use simulated UI and do not prove privileged deployment or real UI control.
+No live credential/grant or system service was created. Root-owned recovery
+locations were inspected read-only. uicache help confirms per-bundle register and
+unregister without respring. Fixture-only owner installation proposal is concrete
+in docs/INSTALLATION_REVIEW.md; executor activation remains held for recovery.

@@ -14,5 +14,5 @@ include $(THEOS_MAKE_PATH)/tweak.mk
 # No install/respring hooks, installer helpers, AppSync, or ldid binaries bundled.
 
 after-stage::
-	@mkdir -p "$(THEOS_STAGING_DIR)$(THEOS_PACKAGE_INSTALL_PREFIX)/usr/share/doc/device-bridge"
-	@cp LICENSE NOTICE THIRD_PARTY_NOTICES.md "$(THEOS_STAGING_DIR)$(THEOS_PACKAGE_INSTALL_PREFIX)/usr/share/doc/device-bridge/"
+	@mkdir -p "$(THEOS_STAGING_DIR)/usr/share/doc/device-bridge"
+	@cp LICENSE NOTICE THIRD_PARTY_NOTICES.md DEVICE_BRIDGE_LICENSE "$(THEOS_STAGING_DIR)/usr/share/doc/device-bridge/"
