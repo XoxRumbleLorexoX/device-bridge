@@ -298,3 +298,18 @@ symlink package/dry-run failure. Host suite: 21 Node + 48 Python = 69 passes;
 syntax checks pass and installer py_compile passes. No live install has occurred.
 Next owner action is sudo authentication for the approved, hash-pinned installer,
 not renewed permission. Executor/restart/grants remain outside this approval.
+
+## Owner fixture installation result — 2026-09-19
+
+Owner supplied installer output: fixture 0.1.0-2+debug unpacked/configured; all
+three installed-file hashes verified; per-bundle uicache registration succeeded.
+Registered display name Bridge Fixture, bundle ID dev.devicebridge.fixture.
+Dpkg reports install ok triggers-awaited, so package state is not yet settled.
+Do not process arbitrary pending triggers or run global uicache/respring. Next
+inspect this package's Triggers-Awaited and Triggers-Pending fields and review the
+exact handler before any execution. Owner manual app launch is still unverified.
+
+An independent read-only SSH recheck failed before running the remote command
+(connection closed, shared SSH channel unavailable). The result above is owner
+terminal evidence, not a fresh agent-side verification. No executor, control grant,
+restart or helper deployment occurred. Private container/bootstrap paths omitted.

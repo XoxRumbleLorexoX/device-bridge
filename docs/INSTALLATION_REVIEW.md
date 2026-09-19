@@ -1,6 +1,6 @@
 # First fixture installation review
 
-Status: owner explicitly approved fixture-only installation/registration. Execution awaits owner sudo authentication; nothing installed or registered by the agent.
+Status: owner executed the approved installer and reports verified files plus successful registration. Dpkg state is triggers-awaited; manual launch and independent recheck remain pending. Shared agent SSH connection has ended.
 
 ## Proposed action
 

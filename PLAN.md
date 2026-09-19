@@ -62,3 +62,5 @@ While fixture-install approval is pending, closed CLI ECDSA pairing gap with str
 Blocked approval audit: same unanswered specific fixture-install request across three turns; current artifacts/access revalidated read-only. Resume with explicit owner fixture-install approval; full goal remains incomplete.
 
 Fixture-only approval received. Installer ready and staged; owner sudo authentication needed. Do not ask for approval again for this exact action. Verify actual install/registration after owner executes it.
+
+Owner installer reports fixture files verified and registered; triggers-awaited remains. Next inspect exact trigger fields and test manual fixture launch; reconnect owner SSH for independent verification. Do not reinstall or drain global triggers.
