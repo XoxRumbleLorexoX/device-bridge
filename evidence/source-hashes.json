@@ -10,7 +10,7 @@
   "fixture/Info.plist": "2633dbeba0bcbe44087a659ce6a53f2759735a0abc54fb550a488dae62739df7",
   "fixture/Makefile": "0cd61970751dc96465a15421861811b3240138b005fec45c9d0a2c4cf17f4210",
   "fixture/control": "99936f6fabdb73bd4135176a66af034eeb68d00cba416e94b0b99d3d994b0cab",
-  "fixture/main.m": "260331cdd57ec1217578e52243b4e2a2a0ad2654a7f716af7f31d8a03b5bd841",
+  "fixture/main.m": "5596c96d6cdc2136fcf17d8160954149ef2a9734efece6ef547dd4b818c880db",
   "package-lock.json": "273bc8a17e4282728f6e69befb3ce876d4f6ab7b6a0baa43959135127c516b81",
   "package.json": "01c43bfc2fd5e50740438976a6df6d3e2ed578326033a83b1dc54cbf368732a1",
   "scripts/check-codex-config.mjs": "388f629984787d85fdfda3589e1da2b52cb7f81613d5cac797295c8f7e06af29",

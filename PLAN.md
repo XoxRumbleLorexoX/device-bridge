@@ -46,3 +46,5 @@ Runtime follow-up: owner reports required Python imports passing; validate Theos
 Next: owner transfers prepared v2 source bundle using existing SSH credentials; verify archive hash, extract in a fresh mobile-owned directory, compile as mobile. Do not package/install/activate until compilation and bootstrap/package preflight succeed.
 
 Owner requested public GitHub publication at XoxRumbleLorexoX/device-bridge. Publish reviewed integration sources/notices/tests; preserve local-only artifacts. Resume native compile after publication.
+
+Native compile reached fixture under mobile; fixed UIKit window property attributes. Retry build, then address any subsequent native errors before packaging or installation.

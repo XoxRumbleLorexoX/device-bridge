@@ -55,7 +55,7 @@
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations { return UIInterfaceOrientationMaskAll; }
 @end
 @interface FixtureApp : UIResponder <UIApplicationDelegate>
-@property UIWindow *window;
+@property (nonatomic, strong) UIWindow *window;
 @end
 @implementation FixtureApp
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {

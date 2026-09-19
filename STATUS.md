@@ -149,3 +149,12 @@ Owner reports source archive transfer completed (121 KB); device compilation is
 still pending. Public documentation omits private LAN address, host fingerprints
 and host user paths. Original local records remain in ignored build storage.
 Generated archives, dependencies, caches and runtime credentials are excluded.
+
+## First owner-run native compilation — 2026-09-19
+
+Owner supplied a compiler error from the mobile account using iPhoneOS16.5.sdk:
+fixture main.m arm64e compilation failed with Wproperty-attribute-mismatch for
+UIApplicationDelegate.window. Corrected the fixture declaration to nonatomic,
+strong to match the SDK protocol. This is an actual owner-run build failure, not
+a passed hardware gate. Native compile retry is pending; executor compilation,
+installation and UI behavior remain unverified. No private device paths retained.
