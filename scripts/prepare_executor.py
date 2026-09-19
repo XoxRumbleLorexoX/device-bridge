@@ -8,7 +8,7 @@ import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULES = ['ScreenManager', 'AppManager', 'MCPProcessUtil', 'AccessibilityManager', 'HIDManager', 'TextInputManager', 'MCPAXQueryContext', 'MCPAXRemoteContextResolver', 'MCPUIElementSerializer', 'MCPUIElementsFacade', 'MCPAXAttributeBridge', 'MCPAXNodeSource']
+MODULES = ['ScreenManager', 'AccessibilityManager', 'HIDManager', 'TextInputManager', 'MCPAXQueryContext', 'MCPAXRemoteContextResolver', 'MCPUIElementSerializer', 'MCPUIElementsFacade', 'MCPAXAttributeBridge', 'MCPAXNodeSource']
 HEADERS = ['MCPLogger.h', 'IOSMCPPreferences.h', 'IOHIDPrivate.h', 'SpringBoardPrivate.h', 'AXPrivate.h']
 
 def prepare(destination):

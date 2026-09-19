@@ -12,7 +12,8 @@
 #import "BridgePeer.h"
 #import "ScreenManager.h"
 #import "AccessibilityManager.h"
-#import "AppManager.h"
+#import <objc/runtime.h>
+#import <objc/message.h>
 #import "TextInputManager.h"
 #import "HIDManager.h"
 
@@ -51,7 +52,7 @@ static BOOL Allowed(NSDictionary *request) {
 }
 
 static NSDictionary *State(void) {
-    NSDictionary *app = [[AppManager sharedInstance] getFrontmostApp];
+    NSDictionary *app = [[AccessibilityManager sharedInstance] frontmostApplicationInfo];
     NSDictionary *screen = [[ScreenManager sharedInstance] screenInfo];
     return @{@"epoch": Epoch, @"app": app[@"bundleId"] ?: @"unknown", @"pid": app[@"pid"] ?: @0,
              @"locked": screen[@"locked"] ?: NSNull.null,
@@ -121,7 +122,7 @@ static NSDictionary *Observe(NSDictionary *request) {
         payload = result;
         dispatch_semaphore_signal(done);
     }];
-    if (dispatch_semaphore_wait(done, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(MAX(0, MIN(8, deadline - Now())) * NSEC_PER_SEC)))
+    if (dispatch_semaphore_wait(done, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(MAX(0, MIN(8, deadline - Now())) * NSEC_PER_SEC))))
         return Error(@"RECOVERY_REQUIRED");
     if (!payload) return Error(@"UNSUPPORTED_CAPABILITY");
     // Use raw native image rather than upstream point-sized JPEG re-encoding.
@@ -163,7 +164,7 @@ static NSDictionary *Observe(NSDictionary *request) {
     return result;
 }
 
-static NSDictionary *Handle(NSDictionary *request, int client) {
+static NSDictionary *BridgeHandleRequest(NSDictionary *request, int client) {
     double deadline = [request[@"deadline"] doubleValue];
     if (!isfinite(deadline) || deadline <= Now() || deadline > Now() + 30) return Error(@"DEADLINE_EXCEEDED");
     if (Poisoned || LocallyStopped) return Error(@"RECOVERY_REQUIRED");
@@ -181,8 +182,15 @@ static NSDictionary *Handle(NSDictionary *request, int client) {
         // Fixture-only activation, including from SpringBoard. Never wake/unlock.
         if (![@[Fixture, @"com.apple.springboard"] containsObject:state[@"app"]]) return Error(@"PERMISSION_DENIED");
         if (Now() >= deadline || !Allowed(request) || !BridgeClientConnected(client)) return Error(@"DEADLINE_EXCEEDED");
-        NSString *error = nil;
-        if (![[AppManager sharedInstance] launchApp:Fixture error:&error]) return Error(@"RECOVERY_REQUIRED");
+        // Same LaunchServices mechanism as pinned ios-mcp AppManager, restricted
+        // to the fixture. No shell/package manager or synchronous UI fallback.
+        Class workspaceClass = objc_getClass("LSApplicationWorkspace");
+        SEL shared = NSSelectorFromString(@"defaultWorkspace");
+        SEL open = NSSelectorFromString(@"openApplicationWithBundleID:");
+        if (!workspaceClass || ![workspaceClass respondsToSelector:shared]) return Error(@"UNSUPPORTED_CAPABILITY");
+        id workspace = ((id (*)(id, SEL))objc_msgSend)((id)workspaceClass, shared);
+        if (!workspace || ![workspace respondsToSelector:open]) return Error(@"UNSUPPORTED_CAPABILITY");
+        if (!((BOOL (*)(id, SEL, NSString *))objc_msgSend)(workspace, open, Fixture)) return Error(@"RECOVERY_REQUIRED");
         return @{@"status": @"dispatched"};
     }
     if (![state[@"app"] isEqual:Fixture] || ![request[@"expected"] isKindOfClass:NSDictionary.class] || !Matches(state, request[@"expected"])) return Error(@"STALE_OBSERVATION");
@@ -271,7 +279,7 @@ __attribute__((constructor)) static void Start(void) {
                     if (!Transfer(client, data.mutableBytes, length, NO)) { close(client); continue; }
                     NSDictionary *request = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
                     NSDictionary *result = nil;
-                    @try { result = [request isKindOfClass:NSDictionary.class] ? Handle(request, client) : Error(@"PERMISSION_DENIED"); }
+                    @try { result = [request isKindOfClass:NSDictionary.class] ? BridgeHandleRequest(request, client) : Error(@"PERMISSION_DENIED"); }
                     @catch (NSException *exception) { Poisoned = YES; result = Error(@"RECOVERY_REQUIRED"); }
                     NSData *reply = [NSJSONSerialization dataWithJSONObject:result options:0 error:nil];
                     uint32_t size = htonl((uint32_t)reply.length);

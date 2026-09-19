@@ -11,8 +11,9 @@ in LICENSE. This does not relicense upstream components.
 
 Local changes: replace original Tweak.x/MCPServer entry with BridgeUI.m; use
 QuietLogger.m instead of disk logging; disable the pinned AccessibilityManager.m
-`MCPEnableAXUIClientBootstrap` flag by a checked single-anchor patch. Other reused
-modules are byte-verified against the pinned Git objects before copying. Native
+`MCPEnableAXUIClientBootstrap` flag by a checked single-anchor patch. AppManager/MCPProcessUtil are excluded; fixture launch uses the same
+LaunchServices mechanism directly, and foreground resolution uses AccessibilityManager.
+Other reused modules are byte-verified against the pinned Git objects before copying. Native
 input/launch modules retain methods beyond the narrow adapter but those methods
 have no exposed dispatch route. No installer helpers are included.
 

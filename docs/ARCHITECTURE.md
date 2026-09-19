@@ -110,3 +110,8 @@ hashes. Installed `dist/esm/types.js` lists `2025-11-25`, `2025-06-18`, `2025-03
 client/server handshake. Streamable HTTP and browser endpoints are deferred,
 so there is no unauthenticated HTTP mode to accidentally enable.
 [Official SDK server guide](https://ts.sdk.modelcontextprotocol.io/server).
+
+Native build follow-up: AppManager and MCPProcessUtil are excluded from prepared
+source and linkage. BridgeUI uses the retained AccessibilityManager foreground
+resolver and a fixture-only LaunchServices dispatch. Unknown foreground identity
+fails closed; no broad app/package methods or Roothide header shim are included.

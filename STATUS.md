@@ -158,3 +158,14 @@ UIApplicationDelegate.window. Corrected the fixture declaration to nonatomic,
 strong to match the SDK protocol. This is an actual owner-run build failure, not
 a passed hardware gate. Native compile retry is pending; executor compilation,
 installation and UI behavior remain unverified. No private device paths retained.
+
+## Native executor compiler fixes — 2026-09-19
+
+Owner reports fixture compiled, linked, merged and signed for arm64 and arm64e.
+No installation or UI execution yet. Executor compile failed: missing closing
+parenthesis, Handle symbol collision with MacTypes.h, and missing roothide.h from
+AppManager/MCPProcessUtil. Fixed syntax/name; removed unused broad app/process
+modules from prepared sources and build. Fixture launch uses the same guarded
+LaunchServices selector directly and reports dispatched; foreground state uses
+the retained AccessibilityManager resolver, leaving unresolved identity unknown.
+No Roothide path shim or additional dependency added. Native retry pending.
