@@ -12,13 +12,13 @@
   "fixture/control": "99936f6fabdb73bd4135176a66af034eeb68d00cba416e94b0b99d3d994b0cab",
   "fixture/main.m": "5596c96d6cdc2136fcf17d8160954149ef2a9734efece6ef547dd4b818c880db",
   "package-lock.json": "273bc8a17e4282728f6e69befb3ce876d4f6ab7b6a0baa43959135127c516b81",
-  "package.json": "01c43bfc2fd5e50740438976a6df6d3e2ed578326033a83b1dc54cbf368732a1",
+  "package.json": "9ad6436702dce33e0aa25a0cd394233b776dd03b9246c98d413a4dd98deff609",
   "scripts/check-codex-config.mjs": "388f629984787d85fdfda3589e1da2b52cb7f81613d5cac797295c8f7e06af29",
   "scripts/device-build-check.sh": "afb01c69341be19d569a262e659068dec847ce8fea6429f99c8199fa11efaeff",
   "scripts/prepare_device_bundle.py": "8894bb574d45dc6f78f5d940d3df80a87e3eaf30210027f46e8742fa0e620ab6",
   "scripts/prepare_executor.py": "13f8035f2fed4b218c1203336a673728191feec311382407cf90d8fac39d7019",
   "scripts/probe-device.sh": "80723b408c9998528ea4deeb6fd597bee0d5677c14fb14f40cc1b72e1d12b76e",
-  "src/cli.mjs": "dcb91af5d1d07668e703c3552cff57d38a967bc8551370e0ffcadc95e2e0d8da",
+  "src/cli.mjs": "92ecc1690a10dcad376a8cc981e05af74e60c3d9184c76cac699b81ce6a7093d",
   "src/gateway.mjs": "33d184d257c08282e8d30ec0aadf6a866f0a3656b6c35af9157fea96fbc51e3d",
   "src/transport.mjs": "21060c99e755f7698acf793b19c53f083b745f710ce968995b493b074bef1c0e",
   "tests/gateway.test.mjs": "7d1edd5ca45c8eba8b365fe5d792d275485c4aafe92eb8fc8e4c5a45c228f065",
@@ -31,5 +31,7 @@
   "tests/test_owner.py": "1be090b5a6119be88569174b6e43114f416c7928ae4430f39a95a7a4671dca4b",
   "tests/test_transport.py": "38a5d922adcdf60f40be76b87c04e2a14ff9d5818313d92aad4c329c087d25b6",
   "tests/transport.test.mjs": "cb6f55235ec1db62aaac224b1317caf53e2406a479b315536885bdc91bcbcc50",
-  "upstreams.json": "d07f290f99e04b0302cb87832f016b40f094c5f85314d4de7b575efc5bd2fa52"
+  "upstreams.json": "d07f290f99e04b0302cb87832f016b40f094c5f85314d4de7b575efc5bd2fa52",
+  "src/pairing.mjs": "6f8901d90761e3c05448b47a3fdd7cc41887df3650e2c1b91f6adadb67f6f71b",
+  "tests/pairing.test.mjs": "d211a4aaf850009fab95992f16da49a9e4d318bb03c89fb284564704d5397ba1"
 }

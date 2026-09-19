@@ -252,3 +252,15 @@ No live credential/grant or system service was created. Root-owned recovery
 locations were inspected read-only. uicache help confirms per-bundle register and
 unregister without respring. Fixture-only owner installation proposal is concrete
 in docs/INSTALLATION_REVIEW.md; executor activation remains held for recovery.
+
+## Pairing compatibility continuation — 2026-09-19
+
+Previous goal turn: progress (native package review and phone Python evidence).
+Specific fixture installation approval is pending; no device mutations this turn.
+Found a real setup gap: CLI accepted only ED25519 despite the owner using ECDSA.
+Added explicit --key-type ecdsa with default ED25519 and no implicit fallback.
+Verifier rejects mismatched fingerprints, algorithms, wire labels, endpoint,
+ambiguous scan output and malformed key encoding. No live trust/credential changes.
+Five pairing unit tests added; native package candidates and approval scope unchanged.
+
+Pairing verification: npm test passed 21 Node + 44 Python = 65 tests; npm run check passed including new pairing module. No hardware or installation claim follows from these unit tests.

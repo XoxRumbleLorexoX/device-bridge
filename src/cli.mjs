@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { verifyHostKey } from './pairing.mjs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, SSHTransport } from './transport.mjs';
@@ -33,13 +33,12 @@ try {
     const fingerprint = option('fingerprint'); const output = option('output');
     if (!/^[a-zA-Z0-9][a-zA-Z0-9.:-]{0,252}$/.test(host ?? '') || !/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535 || !fingerprint || !output)
       throw Error('pair requires --host HOST --port PORT --fingerprint SHA256:... --output NEW_KNOWN_HOSTS_PATH');
-    const scan = execFileSync('ssh-keyscan', ['-T', '5', '-p', port, '-t', 'ed25519', host], { encoding: 'utf8', timeout: 8000, stdio: ['ignore', 'pipe', 'ignore'] });
-    const lines = scan.trim().split('\n').filter(line => !line.startsWith('#'));
-    if (lines.length !== 1) throw Error('Expected exactly one ED25519 key. Verify locally; no key accepted.');
-    const key = lines[0].split(/\s+/)[2];
-    const actual = 'SHA256:' + createHash('sha256').update(Buffer.from(key, 'base64')).digest('base64').replace(/=+$/, '');
-    if (actual !== fingerprint) throw Error('Host key does not match locally verified fingerprint. No key accepted.');
-    writeFileSync(output, lines[0] + '\n', { flag: 'wx', mode: 0o600 });
+    const keyType = option('key-type', 'ed25519');
+    if (!['ed25519', 'ecdsa'].includes(keyType)) throw Error('Use --key-type ed25519 or ecdsa; no automatic algorithm fallback.');
+    const scan = execFileSync('ssh-keyscan', ['-T', '5', '-p', port, '-t', keyType, host], { encoding: 'utf8', timeout: 8000, stdio: ['ignore', 'pipe', 'ignore'] });
+    const verified = verifyHostKey(scan, { host, port, keyType, fingerprint });
+    writeFileSync(output, verified.line + '\n', { flag: 'wx', mode: 0o600 });
+    const actual = verified.fingerprint;
     print({ status: 'host_key_pinned', fingerprint: actual, next_step: 'Owner must provision distinct restricted SSH and helper credentials, then run status. This is not completed device pairing.' });
   } else if (['status', 'capabilities', 'stop'].includes(command)) {
     const config = loadConfig(option('config', '/etc/device-bridge/gateway.json'));
@@ -60,7 +59,7 @@ try {
     print({ status: 'owner_action_required', next_step: `Use the independent administrative channel described in ${resolve(root, 'docs/RECOVERY.md')}. The agent credential cannot administer itself.`, command: `owner.py ${command}` });
     process.exitCode = 2;
   } else {
-    process.stdout.write('bridge setup | doctor | pair --host HOST --fingerprint SHA256:... --output PATH | status | capabilities | serve | connect codex | stop --session UUID | revoke | uninstall\n');
+    process.stdout.write('bridge setup | doctor | pair --host HOST --fingerprint SHA256:... --output PATH [--key-type ed25519|ecdsa] | status | capabilities | serve | connect codex | stop --session UUID | revoke | uninstall\n');
     if (command) process.exitCode = 2;
   }
 } catch (error) {

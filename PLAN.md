@@ -56,3 +56,5 @@ Retry existing v3 build with upstream unused-function warning flag; native linki
 Authenticated on-device native build passed for both architectures. Next prepare package contents/entitlements and independent helper recovery preflight before owner-approved installation. No installation or activation authorized in this build-only session.
 
 Package preflight complete; owner approval required for the concrete fixture-only install in docs/INSTALLATION_REVIEW.md. UI executor activation still requires independent privileged recovery setup and verification.
+
+While fixture-install approval is pending, closed CLI ECDSA pairing gap with strict pinning/parser tests. Continue owner installation/recovery gate after explicit approval.

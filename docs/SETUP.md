@@ -37,6 +37,11 @@ not connect to your phone. The production CLI has no simulation switch.
    node src/cli.mjs pair --host DEVICE_ADDRESS --port 22 --fingerprint 'SHA256:VERIFIED_VALUE' --output /private/tmp/device-bridge-known-hosts
    ```
 
+   ED25519 is the default. For an independently owner-verified ECDSA key, add
+   `--key-type ecdsa`; no algorithm fallback occurs. The scan must contain exactly
+   one key for the requested endpoint, and its algorithm and SHA256 must match.
+   Existing output files are never overwritten.
+
    This does not log in, issue grants, or complete device pairing. Existing output
    files are not overwritten. A mismatch stops setup. Independently install the
    public known-hosts file under `/etc/device-bridge/known_hosts` later.
