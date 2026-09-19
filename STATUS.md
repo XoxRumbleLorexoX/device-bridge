@@ -386,3 +386,15 @@ Read-only SSH inspection confirms the device SSH daemon uses `AuthorizedKeysFile
 This identifies the restricted-key target; it does not authorize changing it.
 Runtime pairing and host gateway configuration remain the next gate. Screen/UI
 activation remains disabled until that independent recovery path is verified.
+
+## Restricted runtime transport verified — 2026-09-19
+
+The owner provisioned a dedicated Ed25519 key with an SSH forced command and
+rotated a distinct helper credential. A direct host test using the real phone
+returned an authenticated `status` response through the forced helper. The
+response reports `helper_online: true` and `state: recovery_required`; the UI
+socket is absent, the public lease remains disabled, and no control session or
+UI activation was attempted. An empty credential was rejected before this test,
+and the key cannot open a shell or forwarding channel. Host gateway installation
+and configuration validation remain pending; the runtime pairing gate itself is
+now verified.
