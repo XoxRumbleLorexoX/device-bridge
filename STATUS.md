@@ -169,3 +169,11 @@ modules from prepared sources and build. Fixture launch uses the same guarded
 LaunchServices selector directly and reports dispatched; foreground state uses
 the retained AccessibilityManager resolver, leaving unresolved identity unknown.
 No Roothide path shim or additional dependency added. Native retry pending.
+
+## Upstream warning flag — 2026-09-19
+
+Owner-run v3 build again compiled/signed the fixture for both architectures.
+Prior BridgeUI syntax/header failures no longer appear. Executor stops compiling
+MCPAXNodeSource.m on 17 unused static functions under -Werror, on both arm64 and
+arm64e. Added -Wno-unused-function matching the pinned upstream Makefile; no
+global warning/error suppression. Native link, install and UI test still pending.

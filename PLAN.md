@@ -50,3 +50,5 @@ Owner requested public GitHub publication at XoxRumbleLorexoX/device-bridge. Pub
 Native compile reached fixture under mobile; fixed UIKit window property attributes. Retry build, then address any subsequent native errors before packaging or installation.
 
 Fixture owner-build succeeded for both architectures; executor fixes prepared. Retry executor compilation before any device installation.
+
+Retry existing v3 build with upstream unused-function warning flag; native linking remains unverified.

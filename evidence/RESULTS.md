@@ -210,3 +210,11 @@ Executor-fix host verification: npm test 60 passes; npm run check passes.
 V3 source bundle manifest verified (48 entries, no app/process manager modules).
 Archive SHA256: a603456a471f82b4adb8be0c4117ecd6f0c672b7402335cd7fa18b60b1a398a5.
 This bundle still requires owner-run native compilation.
+
+## Upstream warning flag — 2026-09-19
+
+Owner-run v3 build again compiled/signed the fixture for both architectures.
+Prior BridgeUI syntax/header failures no longer appear. Executor stops compiling
+MCPAXNodeSource.m on 17 unused static functions under -Werror, on both arm64 and
+arm64e. Added -Wno-unused-function matching the pinned upstream Makefile; no
+global warning/error suppression. Native link, install and UI test still pending.
