@@ -428,3 +428,9 @@ UI activation was attempted. An empty credential was rejected before this test,
 and the key cannot open a shell or forwarding channel. Host gateway installation
 and configuration validation remain pending; the runtime pairing gate itself is
 now verified.
+
+The owner then approved one controlled `sbreload`. After reconnect, the real
+gateway reports `ui_socket_present: true`; independent SSH inspection finds the
+socket at `/var/mobile/Library/DeviceBridge/ui.sock` with mode `0600` and mobile
+ownership. The helper still reports `recovery_required`, the public lease is
+stopped, and no grants or input have been issued.
