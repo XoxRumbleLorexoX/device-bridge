@@ -1,7 +1,8 @@
 # Fixture 0.1.1 replacement review
 
-Owner explicitly approved this replacement. Not yet installed: mobile SSH requires
-owner sudo authentication. No renewed approval is needed for this exact candidate.
+Owner explicitly approved and executed this replacement. Independent SSH verification
+confirms version0.1.1 and all six file hashes. Package still awaits uikittools; actual
+launch and crash resolution remain unverified.
 Do not rerun scripts/install_reviewed_fixture.py: it targets the old package and
 correctly refuses an existing installation.
 

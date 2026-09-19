@@ -321,3 +321,13 @@ Three upgrade test cases pass (including both settled and triggers-awaited prior
 state): unexpected version, changed files and failed dry-run all stop mutations;
 prior package retained before attempted install. Host totals:21 Node +52 Python
 =73 passes; syntax checks pass. Runtime launch and crash fix remain unverified.
+
+## Fixture 0.1.1 installation verified — 2026-09-19
+
+Owner ran the approved replacement: per-bundle registration succeeded and previous
+package was retained by the installer. Independent mobile SSH verification now
+confirms installed0.1.1-1+debug, all six expected file hashes and root ownership.
+Evidence: evidence/fixture-0.1.1-installed.json. Dpkg still awaits uikittools; no
+global trigger handler was run. Actual icon appearance, launch and UI behavior
+remain pending owner observation. Do not call the crash fixed from file hashes.
+No executor/helper deployment, grants or restart occurred.
