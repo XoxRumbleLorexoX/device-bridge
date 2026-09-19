@@ -370,3 +370,19 @@ Host tests77 pass (21 Node +56 Python), syntax checks pass. Four new tests cover
 nonroot denial, payload tampering, preflight-before-write and actual policy state
 checks in an isolated no-UI test harness. Await owner-authenticated execution for
 actual root/helper evidence; do not claim installation from unit tests.
+
+## Owner helper installed and recovery checks passed — 2026-09-19
+
+The owner executed the hash-pinned setup as root on the test phone. The installed
+helper, owner CLI, and license files are root-owned with the reviewed hashes in
+`evidence/phone-helper-setup-tests.txt`. The owner-run result passed missing and
+revoked credential rejection, status/stop/cancel without UI, no-grant session
+denial, and the final stopped state. The public lease is disabled, the operator
+credential is revoked, there are no grants, and no UI package or runtime key was
+installed by setup.
+
+Read-only SSH inspection confirms the device SSH daemon uses `AuthorizedKeysFile
+.ssh/authorized_keys` and the root account home resolves to `/var/jb/var/root`.
+This identifies the restricted-key target; it does not authorize changing it.
+Runtime pairing and host gateway configuration remain the next gate. Screen/UI
+activation remains disabled until that independent recovery path is verified.
