@@ -96,11 +96,19 @@ Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to
 - Added a machine-readable `bridge readiness` report and regression coverage so
   host/simulated success cannot be promoted to hardware or remote gate completion.
 - Added an offline fail-closed UI `.deb` reviewer for the next native replacement.
-  It accepts only the expected package identity/architecture/version and exact
-  restricted dylib/filter-plist payload, rejects maintainer scripts and non-regular
-  or extra entries, and emits package/payload hashes without installation. PR #3
-  CI is the verification authority for this new host-side preflight.
-- Next gate-B step: build the reviewed executor source for the phone, run the package
-  reviewer on that concrete artifact, obtain the specific deployment approval, then
+  Follow-up inspection corrected it to match the actual `iphoneos-arm64` Theos
+  package and exact six-file payload: dylib/filter plist plus four license/notice
+  files. It rejects maintainer scripts and non-regular or extra entries and emits
+  package/payload hashes without installation.
+- Added an artifact-bound UI replacement generator. It re-reviews the candidate,
+  binds the generated owner script to exact current and candidate package/file
+  hashes, requires the prior reviewed `.deb` as a protected rollback artifact,
+  verifies live current state before mutation, suppresses triggers, verifies the
+  resulting candidate files, and performs no reload/respring/grant/input.
+- Host CI run `35854640217` passed on the implementation head; final-head CI remains
+  required after evidence/status documentation is complete.
+- Next gate-B step: build the reviewed observation-resilience executor source for
+  the phone, run the corrected package reviewer on that concrete artifact, generate
+  the hash-bound owner replacement, obtain the specific deployment approval, then
   re-run observe → fixture launch → observe → tap → Unicode verification → cancel.
   Do not advance C–E until that hardware sequence is evidenced.
