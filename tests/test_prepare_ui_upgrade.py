@@ -122,7 +122,7 @@ class PrepareUIUpgradeTests(unittest.TestCase):
         source = (self.root / "owner-upgrade.py").read_text()
         compile(source, "owner-upgrade.py", "exec")
         self.assertIn(result["candidate_sha256"], source)
-        self.assertIn("'a'" * 64, source)
+        self.assertIn("a" * 64, source)
         plan = json.loads((self.root / "plan.json").read_text())
         self.assertEqual(plan["review_state"], "owner_upgrade_plan_not_executed")
         self.assertTrue(plan["safety"]["previous_package_copy_required"])
