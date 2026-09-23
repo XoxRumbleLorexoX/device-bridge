@@ -26,3 +26,63 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run check
+      - name: Verify pinned native source bundle end to end
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_url='https://github.com/witchan/ios-mcp.git'
+          expected_commit='38cafd5fbda7a4dcb3821b94cbb3523fc905c0b2'
+          python3 - "$expected_url" "$expected_commit" <<'PY'
+          import json
+          import sys
+          with open('upstreams.json', encoding='utf-8') as stream:
+              selected = json.load(stream)['ios-mcp']
+          if selected['url'] != sys.argv[1] or selected['commit'] != sys.argv[2]:
+              raise SystemExit('CI pin disagrees with upstreams.json; review the pin change explicitly.')
+          PY
+
+          rm -rf ../ios-mcp
+          git init -q ../ios-mcp
+          git -C ../ios-mcp remote add origin "$expected_url"
+          git -C ../ios-mcp fetch -q --depth=1 origin "$expected_commit"
+          git -C ../ios-mcp checkout -q --detach FETCH_HEAD
+          test "$(git -C ../ios-mcp rev-parse HEAD)" = "$expected_commit"
+
+          out="$(mktemp -d)"
+          trap 'rm -rf "$out" ../ios-mcp' EXIT
+          python3 scripts/prepare_device_bundle.py --output "$out/one.tar.gz"
+          python3 scripts/prepare_device_bundle.py --output "$out/two.tar.gz"
+          cmp "$out/one.tar.gz" "$out/two.tar.gz"
+          sha256sum "$out/one.tar.gz" "$out/two.tar.gz"
+
+          python3 - "$out/one.tar.gz" <<'PY'
+          from pathlib import PurePosixPath
+          import stat
+          import sys
+          import tarfile
+
+          archive_path = sys.argv[1]
+          required = {
+              'device-bridge-build/SHA256SUMS',
+              'device-bridge-build/CANDIDATE_VERSION',
+              'device-bridge-build/build-check.sh',
+              'device-bridge-build/package-candidate.sh',
+              'device-bridge-build/tools/review_ui_package.py',
+              'device-bridge-build/executor/control',
+          }
+          with tarfile.open(archive_path, 'r:gz') as archive:
+              members = archive.getmembers()
+          names = {member.name for member in members}
+          missing = required - names
+          if missing:
+              raise SystemExit(f'Missing required bundle entries: {sorted(missing)}')
+          for member in members:
+              path = PurePosixPath(member.name)
+              if path.is_absolute() or '..' in path.parts:
+                  raise SystemExit(f'Unsafe archive path: {member.name}')
+              if not (member.isfile() or member.isdir()):
+                  raise SystemExit(f'Unexpected archive entry type: {member.name}')
+              if member.mtime != 0 or member.uid != 0 or member.gid != 0:
+                  raise SystemExit(f'Non-deterministic archive metadata: {member.name}')
+          print(f'Pinned bundle verified: {len(members)} regular/directory entries; deterministic bytes match.')
+          PY
