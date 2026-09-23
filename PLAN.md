@@ -104,11 +104,21 @@ Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to
   binds the generated owner script to exact current and candidate package/file
   hashes, requires the prior reviewed `.deb` as a protected rollback artifact,
   verifies live current state before mutation, suppresses triggers, verifies the
-  resulting candidate files, and performs no reload/respring/grant/input.
-- Host CI run `35854640217` passed on the implementation head; final-head CI remains
-  required after evidence/status documentation is complete.
-- Next gate-B step: build the reviewed observation-resilience executor source for
-  the phone, run the corrected package reviewer on that concrete artifact, generate
-  the hash-bound owner replacement, obtain the specific deployment approval, then
-  re-run observe → fixture launch → observe → tap → Unicode verification → cancel.
-  Do not advance C–E until that hardware sequence is evidenced.
+  resulting candidate files, and performs no reload/respring/grant/input. PR #4
+  final CI run `35855254311` passed and the change was merged as `9e3d548e`.
+- Versioned the observation-resilience restricted UI candidate as `0.1.1` and added
+  a deterministic source-bundle/package-review handoff. The archive normalizes
+  tar/gzip metadata and includes source hashes, candidate version, compile-only and
+  package-only scripts, plus the offline reviewer. `package-candidate.sh` verifies
+  the source manifest, runs a non-root `FINALPACKAGE=1` package build, requires
+  exactly one `.deb`, reviews its six-file payload and emits candidate hashes. It
+  contains no install, package-manager, reload/respring, SSH, grant or input step.
+- PR #5 implementation-head run `35855946445` passed `npm test` and `npm run check`;
+  final-head CI remains required after documentation/status evidence is complete.
+- Next gate-B step: create the deterministic 0.1.1 source archive from the pinned
+  checkout; the owner verifies/transfers/extracts it into a fresh mobile-owned
+  directory and runs `package-candidate.sh`; return the exact `.deb`, review JSON
+  and hashes; generate the hash-bound replacement; obtain specific deployment and
+  activation approval; then re-run observe → fixture launch → observe → tap →
+  Unicode verification → cancel. Do not advance C–E until that hardware sequence
+  is evidenced.

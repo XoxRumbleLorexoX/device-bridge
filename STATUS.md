@@ -5,7 +5,7 @@
 | Gate | State | Evidence / blocker |
 |---|---|---|
 | A: baseline and architecture | Implemented/documented | Pinned upstreams, notices, architecture, threat model and contract recorded |
-| B: local vertical slice | Host implementation/simulated slice pass; actual-device observation pending | Host CI including corrected package review and artifact-bound replacement generation passes; prior native adapter is installed/reachable, but the new observation-resilience candidate is not yet built/installed/tested on hardware |
+| B: local vertical slice | Host implementation/simulated slice pass; actual-device observation pending | Host CI, corrected package review, artifact-bound replacement generation and deterministic 0.1.1 source/package handoff pass; the new candidate still requires owner native build/install/activation and real-device acceptance |
 | C: remote slice | Not started | B hardware acceptance, overlay enrollment and separate networks required |
 | D: fidelity/development | Deferred | No hardware calibration, scoped file/plist implementation, deployment or tested rollback |
 | E: usability/hardening | Partial CLI/docs only | Full guided provisioning, authenticated operator page with real agent execution, hardware failure coverage pending |
@@ -16,8 +16,9 @@ shared lease fencing, deadlines, bounded requests, latest-observation/tree check
 durable mutation uncertainty and duplicate handling, no raw screen retention,
 SDK image results, typed fixture-only MCP tools, benign native fixture, CLI doctor/
 pair-key pinning/config output/status/stop, reproducible source hashes and notices,
-an offline fail-closed reviewer for replacement UI packages, and a generator for
-hash-bound owner-run UI replacements that retains the prior reviewed package.
+an offline fail-closed reviewer for replacement UI packages, a generator for
+hash-bound owner-run UI replacements that retains the prior reviewed package, and
+a deterministic native-candidate source/package-review handoff for version 0.1.1.
 Local active-control/stop strip is source-only and needs native validation.
 
 Host: macOS, Node 20.5.0, npm 9.8.0, Python 3.11.4, Codex 0.155.1, Command Line Tools.
@@ -34,10 +35,12 @@ unknown. Persistent host trust was not modified.
 No upstream source modifications, live Codex configuration edits, deployments,
 new device credentials/grants, resprings, restarts or external resources created.
 
-Next: build the reviewed observation-resilience executor candidate, run the corrected
-offline package reviewer on that concrete artifact, generate a hash-bound replacement
-from exact current/candidate evidence, then prepare the specific owner deployment
-review with hashes and recovery plan. See evidence/RESULTS.md and docs/SETUP.md.
+Next: create the deterministic 0.1.1 source archive from the pinned checkout; the
+owner verifies/transfers/extracts it in a fresh mobile-owned directory and runs the
+non-root `package-candidate.sh`; return the exact `.deb`, review JSON and hashes;
+generate the hash-bound replacement and prepare the specific deployment/activation
+review. Hardware acceptance remains the documented Gate-B fixture sequence. See
+`docs/UI_UPGRADE_REVIEW.md`, `evidence/native-candidate-bundle.md`, and `docs/SMOKE.md`.
 
 ## Cancellation hardening continuation
 
@@ -524,8 +527,32 @@ a protected outcome journal, and leaves the previous package available for a
 separately reviewed rollback. It performs no SpringBoard reload/respring, trigger
 drain, credential/grant change, fixture launch or UI input.
 
-PR #4 implementation/evidence head CI run `35854833375` passed `npm ci`, `npm test`
-and `npm run check` on Ubuntu. The final STATUS commit requires one final CI pass
-before merge. Gate B remains open: the observation-resilience candidate still needs
-a real native build, corrected package review, specific owner deployment approval,
-activation and the documented real-device acceptance sequence.
+PR #4 final CI run `35855254311` passed `npm ci`, `npm test` and `npm run check` on
+Ubuntu and was merged as `9e3d548e129f0487d03e8ab02586ceaae1dca3b2`. Gate B remains open: the
+observation-resilience candidate still needs a real native build, corrected package
+review, specific owner deployment approval, activation and the documented
+real-device acceptance sequence.
+
+## Deterministic 0.1.1 native candidate handoff — 2026-09-23
+
+The restricted UI observation-resilience candidate is now versioned `0.1.1`. The
+source-bundle generator normalizes tar/gzip metadata and rejects symlink/non-regular
+entries, while preserving the pinned-upstream byte verification performed by
+`prepare_executor.py`. Identical reviewed source bytes therefore produce identical
+archive bytes and SHA-256 values. The bundle contains a complete source manifest,
+`CANDIDATE_VERSION`, the compile-only build check, a non-root package-only candidate
+script and the offline six-file package reviewer.
+
+The package-only script verifies the extracted source manifest before compilation,
+refuses stale output, checks control version/architecture, builds only the executor
+with `FINALPACKAGE=1`, requires exactly one regular `.deb`, reviews it offline as
+version `0.1.1` / `iphoneos-arm64`, and writes `candidate-review.json` plus
+`CANDIDATE_SHA256SUMS`. Static regression coverage confirms there is no install,
+package-manager, SSH or reload/respring command in this path. The flow is documented
+in `docs/UI_UPGRADE_REVIEW.md`; detailed source/verification scope is in
+`evidence/native-candidate-bundle.md`.
+
+PR #5 implementation-head CI run `35855946445` passed the full `npm test` and
+`npm run check`. Final-head CI remains required after these documentation/status
+updates. No 0.1.1 native package has been built, transferred, installed, activated,
+or exercised on the phone by this GitHub-only work, so Gate B remains open.
