@@ -5,6 +5,20 @@ fixture control grant. Unlock locally; no passcode or biometric actions are offe
 Watch the entire first run. Hardware tests are not part of `npm test` and have not
 run yet. Capture latency/bandwidth/battery measurements are not available.
 
+Before any replacement UI package is proposed for owner approval, review the built
+`.deb` without installing or extracting it:
+
+```sh
+python3 scripts/review_ui_package.py path/to/devicebridge-ui.deb \
+  --expected-version VERSION --output build/ui-package-review.json
+```
+
+A pass means only that the package has the expected identity/architecture, contains
+exactly the restricted dylib and filter plist as regular files, has no maintainer
+scripts/triggers, and has recorded package/payload hashes. It does **not** verify
+signing, installation, native execution, accessibility behavior or device control.
+Use the emitted hashes when preparing the specific owner deployment review.
+
 ## B: real local vertical slice
 
 1. Record device hardware/iOS build/bootstrap, package architecture, host toolchain,
