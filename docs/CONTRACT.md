@@ -47,9 +47,23 @@ A missing acknowledgement or failed after-observation returns OUTCOME_UNKNOWN.
 Observation: observation ID, SpringBoard random process epoch, app PID, foreground
 bundle, lock, capture time, screen point dimensions, scale/native scale/orientation,
 compact elements with scoped refs, non-atomic consistency flag, optional native PNG
-and image-to-screen affine scale/offset. No safe-area/keyboard occlusion or calibrated
-accuracy claim. Crop/streaming/AX-native actions are not implemented. Images use MCP
-image content; image metadata stays in structured content.
+and image-to-screen affine scale/offset. A full observation reports
+`observation_mode: "full"` and `ax_status: "available"`.
+
+When the bounded accessibility query times out or cannot produce a valid compact
+payload, the executor may return a fail-safe `observation_mode: "state_only"`
+observation instead of converting known foreground state into `RECOVERY_REQUIRED`.
+State-only observations require the same fixture to be unlocked and foreground both
+before and after the bounded query, with epoch, PID, lock and screen state unchanged.
+They contain `elements: []`, skip screenshot capture, and expose an `ax_status`
+reason such as `timeout` or `unavailable`. They may verify that a fixture launch
+reached the foreground, but they cannot authorize an element tap or satisfy an AX
+text postcondition. Any state transition, expired deadline, revoked lease or STOP
+still fails closed.
+
+No safe-area/keyboard occlusion or calibrated accuracy claim. Crop/streaming/AX-native
+actions are not implemented. Images use MCP image content; image metadata stays in
+structured content.
 
 Errors include DEVICE_OFFLINE, DEVICE_LOCKED, UNSUPPORTED_CAPABILITY,
 STALE_OBSERVATION, APPROVAL_REQUIRED, PERMISSION_DENIED, OUTCOME_UNKNOWN,
