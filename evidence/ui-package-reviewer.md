@@ -32,7 +32,7 @@ identity mismatch, version mismatch and architecture mismatch.
 
 PR #3 CI run `35853561704` verified the original reviewer implementation. PR #4
 corrects its payload/architecture model to match `device/Makefile` and the recorded
-historical package preflight, and adds replacement-generation coverage. Treat the
-PR #4 correction as pending until CI passes on its final head. No package was
-installed, transferred to a phone, signed, executed, or used to issue UI input as
-part of this host-side work.
+historical package preflight, and adds replacement-generation coverage. PR #4 run
+`35855116599` passed `npm ci`, the full `npm test`, and `npm run check` on the
+STATUS-complete head. No package was installed, transferred to a phone, signed,
+executed, or used to issue UI input as part of this host-side work.
