@@ -11,12 +11,20 @@ import hashlib
 import json
 from pathlib import Path
 
-from review_ui_package import (
-    DEFAULT_ARCHITECTURE,
-    EXPECTED_PAYLOAD,
-    PACKAGE,
-    review_package_bytes,
-)
+try:
+    from .review_ui_package import (
+        DEFAULT_ARCHITECTURE,
+        EXPECTED_PAYLOAD,
+        PACKAGE,
+        review_package_bytes,
+    )
+except ImportError:  # Direct script execution keeps scripts/ on sys.path.
+    from review_ui_package import (
+        DEFAULT_ARCHITECTURE,
+        EXPECTED_PAYLOAD,
+        PACKAGE,
+        review_package_bytes,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "scripts" / "ui_upgrade_template.py"
