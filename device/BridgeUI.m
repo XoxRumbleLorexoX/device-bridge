@@ -110,6 +110,25 @@ static void UpdateIndicator(void) {
     });
 }
 
+static NSDictionary *StateOnlyObservation(NSDictionary *before, NSDictionary *request, NSString *axStatus) {
+    double deadline = [request[@"deadline"] doubleValue];
+    if (Now() >= deadline) return Error(@"DEADLINE_EXCEEDED");
+    if (!Allowed(request)) return Error(@"PERMISSION_DENIED");
+    NSDictionary *after = State();
+    if (!Unlocked(after) || ![after[@"app"] isEqual:Fixture] || ![before isEqual:after]) return Error(@"STALE_OBSERVATION");
+    NSMutableDictionary *result = [before mutableCopy];
+    [result removeObjectForKey:@"screen_on"];
+    result[@"elements"] = @[];
+    result[@"captured_at"] = @(Now());
+    result[@"consistent"] = @YES;
+    result[@"atomic"] = @NO;
+    result[@"observation_mode"] = @"state_only";
+    result[@"ax_status"] = axStatus ?: @"unavailable";
+    result[@"screenshot_status"] = @"skipped";
+    result[@"limitations"] = @[@"Accessibility elements were unavailable within the bounded query; no element references are exposed.", @"Foreground/lock/screen state was sampled before and after and must match exactly.", @"State-only observations may verify foreground fixture launch but cannot authorize element taps or AX-text postconditions."];
+    return result;
+}
+
 static NSDictionary *Observe(NSDictionary *request) {
     double deadline = [request[@"deadline"] doubleValue];
     if (!Allowed(request)) return Error(@"PERMISSION_DENIED");
@@ -117,14 +136,19 @@ static NSDictionary *Observe(NSDictionary *request) {
     if (!Unlocked(before)) return Error(@"DEVICE_LOCKED");
     if (![before[@"app"] isEqual:Fixture]) return Error(@"PERMISSION_DENIED");
     __block NSDictionary *payload = nil;
+    __block NSString *axError = nil;
     dispatch_semaphore_t done = dispatch_semaphore_create(0);
     [[AccessibilityManager sharedInstance] getCompactUIElementsWithMaxElements:256 visibleOnly:YES clickableOnly:NO completion:^(NSDictionary *result, NSString *error) {
         payload = result;
+        axError = error;
         dispatch_semaphore_signal(done);
     }];
-    if (dispatch_semaphore_wait(done, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(MAX(0, MIN(8, deadline - Now())) * NSEC_PER_SEC))))
-        return Error(@"RECOVERY_REQUIRED");
-    if (!payload) return Error(@"UNSUPPORTED_CAPABILITY");
+    NSTimeInterval axBudget = MAX(0, MIN(8, deadline - Now()));
+    if (dispatch_semaphore_wait(done, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(axBudget * NSEC_PER_SEC))))
+        return StateOnlyObservation(before, request, @"timeout");
+    if (!Allowed(request)) return Error(@"PERMISSION_DENIED");
+    if (Now() >= deadline) return Error(@"DEADLINE_EXCEEDED");
+    if (!payload) return StateOnlyObservation(before, request, axError.length > 0 ? @"unavailable" : @"empty");
     // Use raw native image rather than upstream point-sized JPEG re-encoding.
     __block UIImage *image = nil;
     __block NSData *png = nil;
@@ -134,10 +158,12 @@ static NSDictionary *Observe(NSDictionary *request) {
             if (image) png = UIImagePNGRepresentation(image);
         }
     });
+    if (!Allowed(request)) return Error(@"PERMISSION_DENIED");
+    if (Now() >= deadline) return Error(@"DEADLINE_EXCEEDED");
     NSDictionary *after = State();
     if (!Unlocked(after) || ![after[@"app"] isEqual:Fixture]) return Error(@"STALE_OBSERVATION");
     NSArray *raw = [payload[@"elements"] isKindOfClass:NSArray.class] ? payload[@"elements"] : nil;
-    if (!raw) return Error(@"UNSUPPORTED_CAPABILITY");
+    if (!raw) return StateOnlyObservation(before, request, @"invalid_payload");
     NSMutableArray *elements = [NSMutableArray array];
     for (NSDictionary *element in raw) {
         if (![element isKindOfClass:NSDictionary.class]) continue;
@@ -152,6 +178,8 @@ static NSDictionary *Observe(NSDictionary *request) {
     result[@"captured_at"] = @(Now());
     result[@"consistent"] = @([before isEqual:after] && Now() < deadline);
     result[@"atomic"] = @NO;
+    result[@"observation_mode"] = @"full";
+    result[@"ax_status"] = @"available";
     result[@"limitations"] = @[@"Foreground/lock/screen sampled before and after; transitions away and back may escape detection.", @"Compact AX bounds have integer precision; identifiers and native AX actions are unavailable in this adapter.", @"Safe-area and keyboard occlusion are not independently measured."];
     if (png.length > 0 && png.length < 12 * 1024 * 1024) {
         size_t width = CGImageGetWidth(image.CGImage), height = CGImageGetHeight(image.CGImage);
