@@ -5,7 +5,7 @@
 | Gate | State | Evidence / blocker |
 |---|---|---|
 | A: baseline and architecture | Implemented/documented | Pinned upstreams, notices, architecture, threat model and contract recorded |
-| B: local vertical slice | Host implementation/simulated slice pass; actual-device observation pending | 80 host tests + checks pass in CI; prior native adapter is installed/reachable, but the new observation-resilience candidate is not yet built/installed/tested on hardware |
+| B: local vertical slice | Host implementation/simulated slice pass; actual-device observation pending | Host CI including package-review regression passes; prior native adapter is installed/reachable, but the new observation-resilience candidate is not yet built/installed/tested on hardware |
 | C: remote slice | Not started | B hardware acceptance, overlay enrollment and separate networks required |
 | D: fidelity/development | Deferred | No hardware calibration, scoped file/plist implementation, deployment or tested rollback |
 | E: usability/hardening | Partial CLI/docs only | Full guided provisioning, authenticated operator page with real agent execution, hardware failure coverage pending |
@@ -15,7 +15,8 @@ independent SSH forced-command helper, owner-only grants/rotation/revocation/sto
 shared lease fencing, deadlines, bounded requests, latest-observation/tree checks,
 durable mutation uncertainty and duplicate handling, no raw screen retention,
 SDK image results, typed fixture-only MCP tools, benign native fixture, CLI doctor/
-pair-key pinning/config output/status/stop, reproducible source hashes and notices.
+pair-key pinning/config output/status/stop, reproducible source hashes and notices,
+and an offline fail-closed reviewer for replacement UI packages.
 Local active-control/stop strip is source-only and needs native validation.
 
 Host: macOS, Node 20.5.0, npm 9.8.0, Python 3.11.4, Codex 0.155.1, Command Line Tools.
@@ -32,9 +33,9 @@ unknown. Persistent host trust was not modified.
 No upstream source modifications, live Codex configuration edits, deployments,
 new device credentials/grants, resprings, restarts or external resources created.
 
-Next: verify owner SSH identity, read-only device inventory, obtain native build
-prerequisites, compile/review artifacts, then request specific deployment approval
-with hashes and recovery plan. See evidence/RESULTS.md and docs/SETUP.md.
+Next: build the reviewed observation-resilience executor candidate, run the offline
+package reviewer on that concrete artifact, then prepare the specific owner deployment
+review with hashes and recovery plan. See evidence/RESULTS.md and docs/SETUP.md.
 
 ## Cancellation hardening continuation
 
@@ -488,3 +489,19 @@ The prior hardware result remains the latest hardware evidence: real observation
 returned `RECOVERY_REQUIRED`. Advance only after an owner-approved native replacement
 is built/reviewed/installed, then re-run the fixture
 observe/launch/observe/tap/Unicode/cancel sequence with recorded evidence.
+
+## Native package review hardening — 2026-09-23
+
+Added `scripts/review_ui_package.py` as an offline, no-install preflight for the
+next restricted UI replacement. It parses the Debian ar/tar structure in memory,
+requires the exact package identity, expected version/architecture and only the
+restricted UI dylib plus filter plist, rejects maintainer scripts/triggers, extra
+payloads and non-regular entries, and emits package/payload hashes with explicit
+limitations. Regression coverage exercises the valid narrow package plus rejection
+of maintainer scripts, extra payloads, symlinks/non-regular entries and identity,
+version and architecture mismatches.
+
+PR #3 CI run `35853561704` passed `npm ci`, `npm test`, and `npm run check` on
+Ubuntu for the package-review implementation. This is host/source evidence only;
+no replacement package has been built, signed, transferred, installed or executed
+on the phone by this change, so gate B remains open.

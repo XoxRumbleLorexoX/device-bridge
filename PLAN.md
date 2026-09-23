@@ -93,7 +93,14 @@ Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to
 - Contract and evidence distinguish full AX observations from state-only foreground
   verification. Host/source verification is green; native iPhone verification is
   still separately gated and must not be inferred from CI.
-- Next gate-B step: build the reviewed executor source for the phone,
-  package/preflight the replacement, obtain the specific deployment approval, then
+- Added a machine-readable `bridge readiness` report and regression coverage so
+  host/simulated success cannot be promoted to hardware or remote gate completion.
+- Added an offline fail-closed UI `.deb` reviewer for the next native replacement.
+  It accepts only the expected package identity/architecture/version and exact
+  restricted dylib/filter-plist payload, rejects maintainer scripts and non-regular
+  or extra entries, and emits package/payload hashes without installation. PR #3
+  CI is the verification authority for this new host-side preflight.
+- Next gate-B step: build the reviewed executor source for the phone, run the package
+  reviewer on that concrete artifact, obtain the specific deployment approval, then
   re-run observe → fixture launch → observe → tap → Unicode verification → cancel.
   Do not advance C–E until that hardware sequence is evidenced.
