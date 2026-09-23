@@ -11,7 +11,9 @@ from test_helper import h
 
 class UnixTransportTests(unittest.TestCase):
     def exchange(self, response, claimed_size=None, deadline=None):
-        with tempfile.TemporaryDirectory(prefix='br-', dir='/private/tmp') as root:
+        # Use the platform temporary directory. The previous /private/tmp literal
+        # made these otherwise portable AF_UNIX tests fail on Linux CI.
+        with tempfile.TemporaryDirectory(prefix='br-') as root:
             path = str(Path(root) / 'ui.sock')
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as server:
                 server.bind(path); server.listen(1)
@@ -42,10 +44,12 @@ class UnixTransportTests(unittest.TestCase):
             self.exchange({'error': 'DEVICE_LOCKED'})
         self.assertEqual(caught.exception.code, 'DEVICE_LOCKED')
     def test_missing_socket_recovery_is_not_offline_helper(self):
+        missing = str(Path(tempfile.gettempdir()) / 'no-such-device-bridge-socket')
         with self.assertRaises(h.BridgeError) as caught:
-            h.UnixUI('/private/tmp/no-such-device-bridge-socket').call({'op': 'observe'}, time.time() + 1)
+            h.UnixUI(missing).call({'op': 'observe'}, time.time() + 1)
         self.assertEqual(caught.exception.code, 'RECOVERY_REQUIRED')
     def test_expired_request_never_connects(self):
+        missing = str(Path(tempfile.gettempdir()) / 'no-such-device-bridge-socket')
         with self.assertRaises(h.BridgeError) as caught:
-            h.UnixUI('/private/tmp/no-such-device-bridge-socket').call({'op': 'observe'}, 0)
+            h.UnixUI(missing).call({'op': 'observe'}, 0)
         self.assertEqual(caught.exception.code, 'DEADLINE_EXCEEDED')
