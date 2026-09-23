@@ -40,6 +40,7 @@ contents.
 
 ## Verification status
 
-PR #4 CI is the verification authority for this change. An earlier code head passed
-CI run `35854640217`; final-head CI is required after documentation/evidence updates.
-No device access or package mutation occurred while preparing this change.
+PR #4 implementation head passed CI run `35854640217`; the STATUS-complete head
+passed run `35855116599`, including `npm ci`, the full `npm test`, and
+`npm run check`. The final documentation-only head must also remain green before
+merge. No device access or package mutation occurred while preparing this change.
