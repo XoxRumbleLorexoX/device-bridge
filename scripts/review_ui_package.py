@@ -2,14 +2,13 @@
 """Review a Device Bridge UI .deb without installing or extracting it.
 
 The reviewer is intentionally narrow: it accepts only the expected package identity,
-architecture and two-file payload, rejects maintainer scripts and non-regular payload
+architecture and six-file payload, rejects maintainer scripts and non-regular payload
 entries, and emits hashes for owner review. Passing this check is source/package
 evidence only; it is not installation or hardware acceptance evidence.
 """
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 import hashlib
 import io
 import json
@@ -17,21 +16,19 @@ from pathlib import Path, PurePosixPath
 import tarfile
 
 PACKAGE = "dev.devicebridge.ui"
-DEFAULT_ARCHITECTURE = "iphoneos-arm"
+DEFAULT_ARCHITECTURE = "iphoneos-arm64"
 EXPECTED_PAYLOAD = {
     "var/jb/Library/MobileSubstrate/DynamicLibraries/DeviceBridgeUI.dylib",
     "var/jb/Library/MobileSubstrate/DynamicLibraries/DeviceBridgeUI.plist",
+    "var/jb/usr/share/doc/device-bridge/DEVICE_BRIDGE_LICENSE",
+    "var/jb/usr/share/doc/device-bridge/LICENSE",
+    "var/jb/usr/share/doc/device-bridge/NOTICE",
+    "var/jb/usr/share/doc/device-bridge/THIRD_PARTY_NOTICES.md",
 }
 ALLOWED_CONTROL_FILES = {"control", "md5sums"}
 FORBIDDEN_MAINTAINER_FILES = {
     "preinst", "postinst", "prerm", "postrm", "config", "triggers",
 }
-
-
-@dataclass(frozen=True)
-class ArMember:
-    name: str
-    data: bytes
 
 
 def _sha256(data: bytes) -> str:

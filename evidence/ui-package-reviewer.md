@@ -11,9 +11,11 @@ members in memory. The reviewer requires:
 
 - Debian format marker `2.0` and exactly one control archive plus one data archive.
 - package identifier `dev.devicebridge.ui`.
-- an explicitly supplied expected version and architecture (default `iphoneos-arm`).
-- exactly two regular payload files: `DeviceBridgeUI.dylib` and
-  `DeviceBridgeUI.plist` under the rootless MobileSubstrate DynamicLibraries path.
+- an explicitly supplied expected version and architecture (default `iphoneos-arm64`).
+- exactly six regular payload files matching the reviewed Theos staging rule: the
+  `DeviceBridgeUI.dylib` and `DeviceBridgeUI.plist` plus `DEVICE_BRIDGE_LICENSE`,
+  upstream `LICENSE`, `NOTICE`, and `THIRD_PARTY_NOTICES.md` under
+  `usr/share/doc/device-bridge`.
 - no symlinks, hardlinks, devices, FIFOs, extra payload files, maintainer scripts or
   triggers.
 
@@ -22,14 +24,15 @@ A successful review emits package and payload SHA-256 hashes/sizes and the state
 
 ## Regression coverage
 
-`tests/test_ui_package_review.py` covers a narrow valid package and fail-closed
+`tests/test_ui_package_review.py` covers a valid six-file package and fail-closed
 rejection of maintainer scripts, extra payload files, non-regular entries, package
 identity mismatch, version mismatch and architecture mismatch.
 
 ## Verification status
 
-PR #3 CI run `35853561704` completed successfully on the reviewed branch head:
-`npm ci`, `npm test`, and `npm run check` all passed on Ubuntu. This verifies the
-host/source reviewer and its regression coverage only. No package was installed,
-transferred to a phone, signed, executed, or used to issue UI input as part of this
-change.
+PR #3 CI run `35853561704` verified the original reviewer implementation. PR #4
+corrects its payload/architecture model to match `device/Makefile` and the recorded
+historical package preflight, and adds replacement-generation coverage. PR #4 run
+`35855116599` passed `npm ci`, the full `npm test`, and `npm run check` on the
+STATUS-complete head. No package was installed, transferred to a phone, signed,
+executed, or used to issue UI input as part of this host-side work.
