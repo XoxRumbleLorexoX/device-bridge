@@ -32,6 +32,8 @@ STOP, lease revocation/expiry, deadline expiry, lock state changes, foreground c
 
 A GitHub Actions host CI workflow runs `npm ci`, `npm test`, and `npm run check` on the completion branch and pull requests.
 
+The first CI run exposed an unrelated pre-existing portability defect: `tests/test_transport.py` hard-coded macOS `/private/tmp`, so three AF_UNIX tests could not create their temporary directory on Ubuntu. The harness now uses Python's platform temporary directory. The next PR CI run (`35852141370`) passed `npm ci`, all 21 Node tests, all 59 Python tests, and `npm run check`.
+
 ## Verification classification
 
-This review is source-level and simulated-host evidence only until CI finishes. It is **not** a native compilation pass, installed-package verification, accessibility hardware pass, tap calibration pass, or cross-network pass. The real-device observation gate remains open until an owner-approved native replacement is built/reviewed/installed and the hardware smoke sequence succeeds.
+Host CI is **passed** for this candidate: 80 tests total plus syntax/bytecode checks. This remains source-level and simulated-host evidence. It is **not** a native compilation pass, installed-package verification, accessibility hardware pass, tap calibration pass, or cross-network pass. The real-device observation gate remains open until an owner-approved native replacement is built/reviewed/installed and the hardware smoke sequence succeeds.
