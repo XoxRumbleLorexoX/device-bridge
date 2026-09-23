@@ -1,12 +1,12 @@
-# Status — 2026-09-19
+# Status — 2026-09-23
 
-**Overall goal incomplete. No real iOS or cross-network gate has passed.**
+**Overall goal incomplete. Host/source verification passes; real iOS observation and cross-network gates remain open.**
 
 | Gate | State | Evidence / blocker |
 |---|---|---|
-| A: baseline and architecture | Implemented/documented; upstream native/Go baselines blocked | Three clean pinned repos traced; mobile-mcp build passes, its tests fail before running on this host; missing SDK/Theos/Go recorded |
-| B: local vertical slice | Host implementation and simulated slice pass; actual-device gate pending | 60 automated tests; SDK stdio → gateway → real policy helper → simulated UI; native adapter/fixture compiled and signed on phone; installation/UI pending |
-| C: remote slice | Not started | B, verified SSH identity/authentication, overlay enrollment and separate networks required |
+| A: baseline and architecture | Implemented/documented | Pinned upstreams, notices, architecture, threat model and contract recorded |
+| B: local vertical slice | Host implementation/simulated slice pass; actual-device observation pending | 80 host tests + checks pass in CI; prior native adapter is installed/reachable, but the new observation-resilience candidate is not yet built/installed/tested on hardware |
+| C: remote slice | Not started | B hardware acceptance, overlay enrollment and separate networks required |
 | D: fidelity/development | Deferred | No hardware calibration, scoped file/plist implementation, deployment or tested rollback |
 | E: usability/hardening | Partial CLI/docs only | Full guided provisioning, authenticated operator page with real agent execution, hardware failure coverage pending |
 
@@ -475,13 +475,16 @@ screenshot capture, so it cannot mint element references or authorize a blind ta
 The helper already permits an empty element list while deriving tap authority only
 from stored element references. New simulation-only regression tests cover fixture
 launch verification from stable foreground state and rejection of a fabricated tap
-reference. Host GitHub Actions CI now runs `npm ci`, `npm test`, and `npm run check`.
-Contract semantics and the source review are recorded in `docs/CONTRACT.md` and
+reference. Host GitHub Actions CI runs `npm ci`, `npm test`, and `npm run check`.
+The first run exposed an existing macOS-only `/private/tmp` assumption in the AF_UNIX
+test harness; that portability defect was fixed. PR run `35852141370` then passed
+all **21 Node + 59 Python = 80 tests** and `npm run check` on Ubuntu. Contract
+semantics and source/CI evidence are recorded in `docs/CONTRACT.md` and
 `evidence/observation-resilience-review.md`.
 
-This does **not** close gate B yet. At this status update the candidate has not been
-compiled with the iPhoneOS toolchain, packaged, installed, or exercised against the
-real AX runtime. The prior hardware result remains the latest hardware evidence:
-real observation returned `RECOVERY_REQUIRED`. Advance only after CI passes and an
-owner-approved native replacement is built/reviewed/installed, then re-run the
-fixture observe/launch/observe/tap/Unicode/cancel sequence with recorded evidence.
+This does **not** close gate B yet. The candidate has not been compiled with the
+iPhoneOS toolchain, packaged, installed, or exercised against the real AX runtime.
+The prior hardware result remains the latest hardware evidence: real observation
+returned `RECOVERY_REQUIRED`. Advance only after an owner-approved native replacement
+is built/reviewed/installed, then re-run the fixture
+observe/launch/observe/tap/Unicode/cancel sequence with recorded evidence.
