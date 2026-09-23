@@ -4,9 +4,48 @@ This procedure prepares a specific owner-reviewed replacement for the restricted
 Device Bridge UI package. It does not authorize or perform installation, SpringBoard
 reload, respring, control grants, or input.
 
+## 0. Prepare and build the reviewed native candidate
+
+On a host with the pinned `ios-mcp` checkout beside this repository, create the
+source bundle into a new path:
+
+```sh
+python3 scripts/prepare_device_bundle.py \
+  --output build/device-bridge-observation-0.1.1.tar.gz
+```
+
+The bundle generator verifies reused upstream bytes through `prepare_executor.py`,
+normalizes tar/gzip ownership, permissions and timestamps, and emits a SHA-256.
+Identical reviewed source bytes therefore produce identical archive bytes. The
+archive includes `SHA256SUMS`, `CANDIDATE_VERSION`, the compile-only
+`build-check.sh`, the package-only `package-candidate.sh`, and the offline package
+reviewer. No device access occurs while creating the bundle.
+
+The owner transfers the exact archive through their existing trusted channel,
+verifies the announced archive SHA-256, and extracts it into a **fresh**
+mobile-owned directory. As the non-root mobile user with verified `THEOS`, run:
+
+```sh
+./package-candidate.sh
+```
+
+That script verifies every source file against `SHA256SUMS`, refuses pre-existing
+package/review output, checks the executor control version/architecture, and runs a
+package-only Theos build with `FINALPACKAGE=1`. It selects exactly one generated
+`.deb`, runs the bundled offline reviewer against version `0.1.1` and architecture
+`iphoneos-arm64`, and writes `candidate-review.json` plus
+`CANDIDATE_SHA256SUMS`. It does not run `make install`, `dpkg`, reload/respring, a
+grant, fixture launch, or input.
+
+Return the exact `.deb`, `candidate-review.json`, and `CANDIDATE_SHA256SUMS` through
+the trusted owner channel for the host-side immutable-upgrade preparation below.
+A successful package build/review is native artifact evidence only; it is not an
+installed/runtime Gate-B pass.
+
 ## 1. Review the built candidate
 
-Run the offline package reviewer against the exact `.deb`:
+If the candidate was not produced through the bundled `package-candidate.sh`, run
+the repository offline reviewer against the exact `.deb`:
 
 ```sh
 python3 scripts/review_ui_package.py build/dev.devicebridge.ui_VERSION_iphoneos-arm64.deb \
