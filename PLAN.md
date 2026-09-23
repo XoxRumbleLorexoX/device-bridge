@@ -87,10 +87,13 @@ Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to
   no elements or screenshot and therefore cannot authorize a blind element tap.
 - Added simulation-only regression coverage for fixture launch verification and
   fail-closed tap behavior, plus host CI for `npm test` and `npm run check`.
-- Contract and evidence now distinguish full AX observations from state-only
-  foreground verification. This is a source candidate only until CI completes and
-  an owner-approved native build/review/install passes the actual-device smoke gate.
-- Next gate-B step: after CI, build the reviewed executor source for the phone,
+- CI exposed and fixed an existing macOS-only `/private/tmp` assumption in the
+  AF_UNIX test harness. PR CI then passed **21 Node + 59 Python = 80 tests** and
+  `npm run check` on Ubuntu.
+- Contract and evidence distinguish full AX observations from state-only foreground
+  verification. Host/source verification is green; native iPhone verification is
+  still separately gated and must not be inferred from CI.
+- Next gate-B step: build the reviewed executor source for the phone,
   package/preflight the replacement, obtain the specific deployment approval, then
   re-run observe → fixture launch → observe → tap → Unicode verification → cancel.
   Do not advance C–E until that hardware sequence is evidenced.
