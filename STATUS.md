@@ -460,3 +460,28 @@ opened Bridge Fixture, observation returned `RECOVERY_REQUIRED` after its
 bounded timeout. That session was also cancelled, with no tap, text, or launch
 action dispatched. The real device observation gate therefore remains
 unverified and the UI executor requires diagnosis before another session.
+
+## Observation resilience candidate — 2026-09-23
+
+Source review identified one deterministic failure conversion in the executor:
+the bounded compact-accessibility semaphore timeout returned `RECOVERY_REQUIRED`
+immediately even when the benign fixture remained unlocked and foreground. A
+completion branch now adds a fail-safe state-only observation mode for timeout or
+unavailable/invalid compact AX payloads. It rechecks the lease and deadline and
+requires the exact same epoch, fixture PID/app, lock state and screen state before
+and after the bounded query. The degraded result contains no AX elements and skips
+screenshot capture, so it cannot mint element references or authorize a blind tap.
+
+The helper already permits an empty element list while deriving tap authority only
+from stored element references. New simulation-only regression tests cover fixture
+launch verification from stable foreground state and rejection of a fabricated tap
+reference. Host GitHub Actions CI now runs `npm ci`, `npm test`, and `npm run check`.
+Contract semantics and the source review are recorded in `docs/CONTRACT.md` and
+`evidence/observation-resilience-review.md`.
+
+This does **not** close gate B yet. At this status update the candidate has not been
+compiled with the iPhoneOS toolchain, packaged, installed, or exercised against the
+real AX runtime. The prior hardware result remains the latest hardware evidence:
+real observation returned `RECOVERY_REQUIRED`. Advance only after CI passes and an
+owner-approved native replacement is built/reviewed/installed, then re-run the
+fixture observe/launch/observe/tap/Unicode/cancel sequence with recorded evidence.
