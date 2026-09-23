@@ -19,6 +19,7 @@ npm ci --ignore-scripts --no-audit --no-fund
 npm test
 npm run check
 node src/cli.mjs setup
+node src/cli.mjs readiness
 node src/cli.mjs connect codex
 ```
 
@@ -32,6 +33,8 @@ happens automatically.
 - [Smoke tests and acceptance gates](docs/SMOKE.md)
 - [Recovery, revocation and uninstall](docs/RECOVERY.md)
 - [Compatibility](docs/COMPATIBILITY.md), [current status](STATUS.md), [evidence](evidence/RESULTS.md)
+
+`bridge readiness` is the machine-readable acceptance summary. It is deliberately fail-closed: host/simulated test success cannot mark native hardware or cross-network gates verified.
 - [Licensing and local patches](THIRD_PARTY_NOTICES.md)
 
 Only fixture observation, launch, observed element taps and bounded Unicode
