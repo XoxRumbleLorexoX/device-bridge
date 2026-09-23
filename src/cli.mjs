@@ -6,6 +6,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, SSHTransport } from './transport.mjs';
 import { serve, envelope } from './gateway.mjs';
+import { readinessReport } from './readiness.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const command = argv.shift();
@@ -26,6 +27,8 @@ try {
   if (command === 'doctor' || command === 'setup') {
     doctor();
     if (command === 'setup') process.stdout.write('\nSetup guide: ' + resolve(root, 'docs/SETUP.md') + '\nConfig template: ' + resolve(root, 'docs/gateway.example.json') + '\n');
+  } else if (command === 'readiness') {
+    print(readinessReport());
   } else if (command === 'serve') {
     await serve(option('config', '/etc/device-bridge/gateway.json'));
   } else if (command === 'pair') {
@@ -59,7 +62,7 @@ try {
     print({ status: 'owner_action_required', next_step: `Use the independent administrative channel described in ${resolve(root, 'docs/RECOVERY.md')}. The agent credential cannot administer itself.`, command: `owner.py ${command}` });
     process.exitCode = 2;
   } else {
-    process.stdout.write('bridge setup | doctor | pair --host HOST --fingerprint SHA256:... --output PATH [--key-type ed25519|ecdsa] | status | capabilities | serve | connect codex | stop --session UUID | revoke | uninstall\n');
+    process.stdout.write('bridge setup | doctor | readiness | pair --host HOST --fingerprint SHA256:... --output PATH [--key-type ed25519|ecdsa] | status | capabilities | serve | connect codex | stop --session UUID | revoke | uninstall\n');
     if (command) process.exitCode = 2;
   }
 } catch (error) {
