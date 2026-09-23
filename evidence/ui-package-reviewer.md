@@ -28,7 +28,8 @@ identity mismatch, version mismatch and architecture mismatch.
 
 ## Verification status
 
-PR #3 CI is the verification authority for this change. Until CI completes, treat
-this record as source prepared/pending verification. No package was installed,
+PR #3 CI run `35853561704` completed successfully on the reviewed branch head:
+`npm ci`, `npm test`, and `npm run check` all passed on Ubuntu. This verifies the
+host/source reviewer and its regression coverage only. No package was installed,
 transferred to a phone, signed, executed, or used to issue UI input as part of this
 change.
