@@ -76,3 +76,21 @@ Fixture0.1.1 installed hashes verified via SSH. Next owner opens app once and ch
 Owner can see0.1.1 UI/icon. Clarify target buttons; verify typed/tapped feedback.0.1.2 source fixes dark-appearance contrast and labels, pending build evidence/review before any replacement. Screen observation service remains undeployed.
 
 Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to install and test stop/revoke with control disabled. Next provision restricted runtime transport before any UI activation.
+
+## Progress 2026-09-23
+
+- Diagnosed a source-level resilience gap behind the latest hardware blocker: the
+  restricted executor converted any bounded compact-accessibility timeout into
+  `RECOVERY_REQUIRED` before preserving otherwise stable fixture foreground state.
+- Added a fail-safe `state_only` observation mode. It requires an unchanged epoch,
+  fixture PID/app, lock and screen state before/after the bounded AX query; it emits
+  no elements or screenshot and therefore cannot authorize a blind element tap.
+- Added simulation-only regression coverage for fixture launch verification and
+  fail-closed tap behavior, plus host CI for `npm test` and `npm run check`.
+- Contract and evidence now distinguish full AX observations from state-only
+  foreground verification. This is a source candidate only until CI completes and
+  an owner-approved native build/review/install passes the actual-device smoke gate.
+- Next gate-B step: after CI, build the reviewed executor source for the phone,
+  package/preflight the replacement, obtain the specific deployment approval, then
+  re-run observe → fixture launch → observe → tap → Unicode verification → cancel.
+  Do not advance C–E until that hardware sequence is evidenced.
