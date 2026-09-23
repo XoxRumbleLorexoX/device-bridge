@@ -8,7 +8,10 @@ import shutil
 import tarfile
 import tempfile
 
-from prepare_executor import ROOT, prepare
+try:
+    from .prepare_executor import ROOT, prepare
+except ImportError:  # Direct script execution keeps scripts/ on sys.path.
+    from prepare_executor import ROOT, prepare
 
 
 def _control_version(control: Path) -> str:
