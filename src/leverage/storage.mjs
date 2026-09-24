@@ -4,6 +4,8 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { DEFAULT_PRIVACY_POLICY } from './model.mjs';
 
+const COLLECTIONS = ['events', 'activities', 'repetitions', 'variable_definitions', 'observations', 'goals', 'outcome_metrics', 'bottlenecks', 'opportunities', 'experiments', 'outcome_measurements', 'feedback'];
+
 export function defaultLeverageStorePath(env = process.env) {
   return env.DEVICE_BRIDGE_LEVERAGE_STORE || join(homedir(), '.local', 'share', 'device-bridge', 'leverage-store.json');
 }
@@ -18,17 +20,21 @@ export function emptyLeverageState() {
     variable_definitions: [],
     observations: [],
     goals: [],
+    outcome_metrics: [],
+    bottlenecks: [],
     causal_graph: { nodes: [], edges: [] },
     opportunities: [],
     experiments: [],
+    outcome_measurements: [],
     feedback: [],
     analysis_meta: null,
   };
 }
 
-function validateState(value) {
+function normalizeState(value) {
   if (!value || value.schema_version !== 1) throw new Error('Unsupported or corrupt leverage store schema.');
-  for (const key of ['events', 'activities', 'repetitions', 'variable_definitions', 'observations', 'goals', 'opportunities', 'experiments', 'feedback']) {
+  for (const key of COLLECTIONS) {
+    if (value[key] === undefined) value[key] = [];
     if (!Array.isArray(value[key])) throw new Error(`Corrupt leverage store collection: ${key}`);
   }
   if (!value.privacy || !value.causal_graph) throw new Error('Corrupt leverage store metadata.');
@@ -44,7 +50,7 @@ export class LeverageStore {
   async load() {
     try {
       const raw = await readFile(this.path, 'utf8');
-      return validateState(JSON.parse(raw));
+      return normalizeState(JSON.parse(raw));
     } catch (error) {
       if (error?.code === 'ENOENT') return emptyLeverageState();
       throw error;
@@ -52,7 +58,7 @@ export class LeverageStore {
   }
 
   async save(state) {
-    validateState(state);
+    normalizeState(state);
     const directory = dirname(this.path);
     await mkdir(directory, { recursive: true, mode: 0o700 });
     await chmod(directory, 0o700).catch(() => {});
