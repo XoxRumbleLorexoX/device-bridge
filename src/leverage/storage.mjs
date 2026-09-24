@@ -14,6 +14,7 @@ export function emptyLeverageState() {
     privacy: structuredClone(DEFAULT_PRIVACY_POLICY),
     events: [],
     activities: [],
+    repetitions: [],
     variable_definitions: [],
     observations: [],
     goals: [],
@@ -27,7 +28,7 @@ export function emptyLeverageState() {
 
 function validateState(value) {
   if (!value || value.schema_version !== 1) throw new Error('Unsupported or corrupt leverage store schema.');
-  for (const key of ['events', 'activities', 'variable_definitions', 'observations', 'goals', 'opportunities', 'experiments', 'feedback']) {
+  for (const key of ['events', 'activities', 'repetitions', 'variable_definitions', 'observations', 'goals', 'opportunities', 'experiments', 'feedback']) {
     if (!Array.isArray(value[key])) throw new Error(`Corrupt leverage store collection: ${key}`);
   }
   if (!value.privacy || !value.causal_graph) throw new Error('Corrupt leverage store metadata.');
