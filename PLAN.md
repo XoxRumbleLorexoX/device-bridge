@@ -113,8 +113,14 @@ Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to
   the source manifest, runs a non-root `FINALPACKAGE=1` package build, requires
   exactly one `.deb`, reviews its six-file payload and emits candidate hashes. It
   contains no install, package-manager, reload/respring, SSH, grant or input step.
-- PR #5 implementation-head run `35855946445` passed `npm test` and `npm run check`;
-  final-head CI remains required after documentation/status evidence is complete.
+- PR #5 final-head CI run `35856620785` passed `npm ci`, the full `npm test`, and
+  `npm run check`; the change was merged as `ff194d08455c133fb926ddcd9320233757a97463`.
+- Added pinned-upstream integration CI for the deterministic candidate bundle. PR #6
+  run `35856906069` asserted the source URL/commit still match `upstreams.json`,
+  fetched only `ios-mcp@38cafd5fbda7a4dcb3821b94cbb3523fc905c0b2`, generated the
+  source archive twice, required byte-identical output, and verified required bundle
+  entries plus normalized/safe archive metadata. The ordinary tests and checks also
+  passed. This is source reproducibility evidence only, not native/device evidence.
 - Next gate-B step: create the deterministic 0.1.1 source archive from the pinned
   checkout; the owner verifies/transfers/extracts it into a fresh mobile-owned
   directory and runs `package-candidate.sh`; return the exact `.deb`, review JSON
