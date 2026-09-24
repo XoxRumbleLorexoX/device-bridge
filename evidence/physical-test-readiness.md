@@ -51,9 +51,11 @@ successful immutable pack generation, candidate tampering, extra sidecar entries
 existing-output preservation and malformed repository commit rejection.
 
 PR #11 implementation-head CI run `35996086124` passed `npm test`, `npm run check`,
-the pinned-upstream source-bundle verification, and verified artifact upload before
-documentation/status synchronization. Final-head CI is still required after those
-updates.
+the pinned-upstream source-bundle verification, and verified artifact upload. After
+PLAN/STATUS/evidence/README/readiness synchronization, PR run `35996944042` passed
+the same complete workflow on head `84f87e23cf6d759b37f23b38641a5d4995721cb0`.
+Exact merge-head CI remains authoritative; this static evidence record does not
+substitute an earlier green run for checks on a later commit.
 
 ## Remaining physical boundary
 
