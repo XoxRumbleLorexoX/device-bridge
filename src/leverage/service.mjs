@@ -4,6 +4,7 @@ import { normalizePrivacyPolicy, privacyDecision, retentionCutoff } from './priv
 import { LeverageStore } from './storage.mjs';
 import { buildActivities, buildCausalGraph, detectRepetitions, discoverLeverage, extractVariables, rankLeverage, weeklyLeverageReview } from './pipeline.mjs';
 import { attachOpportunityCosts, deriveOutcomeMetrics, detectBottlenecks, enrichLeverageMap, toProactiveInsight } from './reasoning.mjs';
+import { assertDomainModule, discoverDomainCandidates } from './domains.mjs';
 
 function parseHorizon(value) {
   if (value === 'all') return Infinity;
@@ -29,9 +30,10 @@ function filterOpportunity(opportunity, { domain, goal_id }) {
 }
 
 export class LeverageService {
-  constructor(store = new LeverageStore(), { clock = () => Date.now() } = {}) {
+  constructor(store = new LeverageStore(), { clock = () => Date.now(), domainModules = [] } = {}) {
     this.store = store;
     this.clock = clock;
+    this.domainModules = domainModules.map(assertDomainModule);
   }
 
   async privacy() {
@@ -101,7 +103,7 @@ export class LeverageService {
     const horizon = parseHorizon(time_horizon);
     const asOfMs = as_of ? Date.parse(as_of) : this.clock();
     if (!Number.isFinite(asOfMs)) throw new Error('as_of must be an ISO timestamp.');
-    return this.store.transaction(state => {
+    return this.store.transaction(async state => {
       const goalIds = new Set(state.goals.map(goal => goal.id));
       if (goal_id && !goalIds.has(goal_id)) throw new Error('goal_id does not exist.');
       const cutoff = horizon === Infinity ? -Infinity : asOfMs - horizon;
@@ -117,7 +119,18 @@ export class LeverageService {
       const outcomeMetrics = deriveOutcomeMetrics(activeGoals);
       const bottlenecks = detectBottlenecks({ goals: activeGoals, observations: variableModel.observations, repetitions });
       let candidates = discoverLeverage({ goals: state.goals, observations: variableModel.observations, repetitions, events });
-      candidates = candidates.map(candidate => ({ ...candidate, confidence: Math.round(candidate.confidence * baseline.confidence_multiplier * 1000) / 1000 }));
+      const domainCandidates = await discoverDomainCandidates(this.domainModules, {
+        goals: structuredClone(activeGoals),
+        events: structuredClone(events),
+        activities: structuredClone(activities),
+        variables: structuredClone(variableModel.definitions),
+        observations: structuredClone(variableModel.observations),
+        repetitions: structuredClone(repetitions),
+        outcome_metrics: structuredClone(outcomeMetrics),
+        bottlenecks: structuredClone(bottlenecks),
+        as_of: new Date(asOfMs).toISOString(),
+      });
+      candidates = [...candidates, ...domainCandidates].map(candidate => ({ ...candidate, confidence: Math.round(candidate.confidence * baseline.confidence_multiplier * 1000) / 1000 }));
       let opportunities = rankLeverage(candidates, state.feedback);
       opportunities = attachOpportunityCosts(opportunities, bottlenecks).map(item => ({ ...item, action_authority: 'user_required', action_state: 'recommendation_only' }));
       const baseGraph = buildCausalGraph(state.goals, variableModel.definitions, opportunities, new Date(asOfMs).toISOString());
@@ -130,7 +143,7 @@ export class LeverageService {
       state.bottlenecks = bottlenecks;
       state.opportunities = opportunities;
       state.causal_graph = graph;
-      state.analysis_meta = { as_of: new Date(asOfMs).toISOString(), time_horizon, baseline, event_count: events.length };
+      state.analysis_meta = { as_of: new Date(asOfMs).toISOString(), time_horizon, baseline, event_count: events.length, domain_modules: this.domainModules.map(module => module.id) };
       const selected = opportunities.filter(item => filterOpportunity(item, { domain, goal_id }));
       const selectedBottleneckIds = new Set(selected.flatMap(item => item.bottleneck_ids ?? []));
       return {
