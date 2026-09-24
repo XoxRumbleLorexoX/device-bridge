@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { canonicalEvent, canonicalGoal, FeedbackSchema } from './model.mjs';
+import { canonicalEvent, canonicalGoal, FeedbackSchema, OutcomeMeasurementSchema } from './model.mjs';
 import { normalizePrivacyPolicy, privacyDecision, retentionCutoff } from './privacy.mjs';
 import { LeverageStore } from './storage.mjs';
 import { buildActivities, buildCausalGraph, detectRepetitions, discoverLeverage, extractVariables, rankLeverage, weeklyLeverageReview } from './pipeline.mjs';
+import { attachOpportunityCosts, deriveOutcomeMetrics, detectBottlenecks, enrichLeverageMap, toProactiveInsight } from './reasoning.mjs';
 
 function parseHorizon(value) {
   if (value === 'all') return Infinity;
@@ -48,15 +49,9 @@ export class LeverageService {
   async deleteHistory({ confirm, retain_goals = false } = {}) {
     if (confirm !== 'DELETE_LEVERAGE_HISTORY') throw new Error('History deletion requires confirm=DELETE_LEVERAGE_HISTORY.');
     return this.store.transaction(state => {
-      const counts = Object.fromEntries(['events', 'activities', 'repetitions', 'variable_definitions', 'observations', 'opportunities', 'experiments', 'feedback'].map(key => [key, Array.isArray(state[key]) ? state[key].length : 0]));
-      state.events = [];
-      state.activities = [];
-      state.repetitions = [];
-      state.variable_definitions = [];
-      state.observations = [];
-      state.opportunities = [];
-      state.experiments = [];
-      state.feedback = [];
+      const collections = ['events', 'activities', 'repetitions', 'variable_definitions', 'observations', 'outcome_metrics', 'bottlenecks', 'opportunities', 'experiments', 'outcome_measurements', 'feedback'];
+      const counts = Object.fromEntries(collections.map(key => [key, Array.isArray(state[key]) ? state[key].length : 0]));
+      for (const key of collections) state[key] = [];
       state.causal_graph = { nodes: [], edges: [] };
       state.analysis_meta = null;
       if (!retain_goals) state.goals = [];
@@ -118,25 +113,36 @@ export class LeverageService {
       const activities = buildActivities(events);
       const repetitions = detectRepetitions(events);
       const variableModel = extractVariables(events, activities, repetitions, new Date(asOfMs).toISOString());
+      const activeGoals = state.goals.filter(goal => goal.provenance === 'explicit' || goal.confirmation_status === 'confirmed');
+      const outcomeMetrics = deriveOutcomeMetrics(activeGoals);
+      const bottlenecks = detectBottlenecks({ goals: activeGoals, observations: variableModel.observations, repetitions });
       let candidates = discoverLeverage({ goals: state.goals, observations: variableModel.observations, repetitions, events });
       candidates = candidates.map(candidate => ({ ...candidate, confidence: Math.round(candidate.confidence * baseline.confidence_multiplier * 1000) / 1000 }));
-      const opportunities = rankLeverage(candidates, state.feedback);
-      const graph = buildCausalGraph(state.goals, variableModel.definitions, opportunities, new Date(asOfMs).toISOString());
+      let opportunities = rankLeverage(candidates, state.feedback);
+      opportunities = attachOpportunityCosts(opportunities, bottlenecks).map(item => ({ ...item, action_authority: 'user_required', action_state: 'recommendation_only' }));
+      const baseGraph = buildCausalGraph(state.goals, variableModel.definitions, opportunities, new Date(asOfMs).toISOString());
+      const graph = enrichLeverageMap(baseGraph, bottlenecks, opportunities);
       state.activities = activities;
       state.repetitions = repetitions;
       state.variable_definitions = variableModel.definitions;
       state.observations = variableModel.observations;
+      state.outcome_metrics = outcomeMetrics;
+      state.bottlenecks = bottlenecks;
       state.opportunities = opportunities;
       state.causal_graph = graph;
       state.analysis_meta = { as_of: new Date(asOfMs).toISOString(), time_horizon, baseline, event_count: events.length };
       const selected = opportunities.filter(item => filterOpportunity(item, { domain, goal_id }));
+      const selectedBottleneckIds = new Set(selected.flatMap(item => item.bottleneck_ids ?? []));
       return {
         analysis: structuredClone(state.analysis_meta),
         goals: structuredClone(state.goals.filter(goal => !goal_id || goal.id === goal_id)),
+        outcome_metrics: structuredClone(outcomeMetrics),
         activities: structuredClone(activities),
         variables: structuredClone(variableModel.definitions),
         observations: structuredClone(variableModel.observations),
+        bottlenecks: structuredClone(bottlenecks.filter(item => !domain || item.domain === domain || selectedBottleneckIds.has(item.id))),
         opportunities: structuredClone(selected),
+        insights: structuredClone(selected.map(toProactiveInsight)),
         leverage_map: structuredClone(graph),
         value_of_information: [...new Set(selected.flatMap(item => item.missing_variables))],
       };
@@ -159,7 +165,12 @@ export class LeverageService {
       evidence: structuredClone(item.evidence),
       assumptions: structuredClone(item.assumptions),
       missing_variables: structuredClone(item.missing_variables),
+      bottlenecks: structuredClone(state.bottlenecks.filter(bottleneck => item.bottleneck_ids?.includes(bottleneck.id))),
+      opportunity_cost: structuredClone(item.opportunity_cost),
+      measured_outcomes: structuredClone(state.outcome_measurements.filter(outcome => outcome.opportunity_id === item.id)),
       ranking: structuredClone(item.ranking),
+      action_authority: item.action_authority,
+      action_state: item.action_state,
     };
   }
 
@@ -171,6 +182,17 @@ export class LeverageService {
       const feedback = { id: randomUUID(), timestamp: new Date(this.clock()).toISOString(), ...parsed, opportunity_key: opportunity.opportunity_key, evidence_signature: opportunity.evidence_signature };
       state.feedback.push(feedback);
       return structuredClone(feedback);
+    });
+  }
+
+  async recordOutcome(input) {
+    const parsed = OutcomeMeasurementSchema.parse(input);
+    return this.store.transaction(state => {
+      if (parsed.opportunity_id && !state.opportunities.some(item => item.id === parsed.opportunity_id)) throw new Error('Referenced opportunity does not exist.');
+      if (parsed.experiment_id && !state.experiments.some(item => item.id === parsed.experiment_id)) throw new Error('Referenced experiment does not exist.');
+      const measurement = { id: randomUUID(), ...parsed, timestamp: parsed.timestamp ?? new Date(this.clock()).toISOString() };
+      state.outcome_measurements.push(measurement);
+      return structuredClone(measurement);
     });
   }
 
@@ -194,6 +216,7 @@ export class LeverageService {
         status: 'planned',
         created_at: new Date(this.clock()).toISOString(),
         assumptions: opportunity.assumptions,
+        action_authority: 'user_required',
       };
       state.experiments.push(experiment);
       return structuredClone(experiment);
