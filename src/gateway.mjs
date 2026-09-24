@@ -3,7 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { BridgeError, SSHTransport, loadConfig } from './transport.mjs';
-import { EventSchema, FeedbackSchema, GoalSchema, PRIVACY_CLASS } from './leverage/model.mjs';
+import { EventSchema, FeedbackSchema, GoalSchema, OutcomeMeasurementSchema, PRIVACY_CLASS } from './leverage/model.mjs';
 import { LeverageService } from './leverage/service.mjs';
 
 const id = z.string().uuid();
@@ -58,7 +58,7 @@ export const leverageTools = {
   leverage_find: {
     local: true,
     schema: z.object({ ...leverageFilter.shape, time_horizon: z.string().regex(/^(all|\d{1,4}d)$/u).default('30d'), as_of: z.string().datetime({ offset: true }).optional() }).strict(),
-    description: 'Find leverage from locally stored observations. Returns activities, variables, ranked opportunities, missing information, assumptions and a visualisable leverage map.',
+    description: 'Find leverage from locally stored observations. Returns activities, variables, outcome metrics, bottlenecks, ranked opportunities, missing information, proactive insights and a visualisable leverage map.',
     handler: (service, args) => service.analyse(args),
   },
   leverage_opportunities: {
@@ -70,14 +70,20 @@ export const leverageTools = {
   leverage_why: {
     local: true, readOnly: true, idempotent: true,
     schema: z.object({ opportunity_id: id }).strict(),
-    description: 'Explain one recommendation as observation → inference → hypothesis → assumptions → recommendation, including ranking dimensions.',
+    description: 'Explain one recommendation as observation → inference → hypothesis → assumptions → recommendation, including bottlenecks, opportunity cost, measured outcomes and ranking dimensions.',
     handler: (service, args) => service.why(args.opportunity_id),
   },
   leverage_feedback: {
     local: true,
     schema: FeedbackSchema,
-    description: 'Record accepted/dismissed/completed/outcome feedback. Repeatedly dismissed evidence-equivalent recommendations are suppressed.',
+    description: 'Record accepted/dismissed/completed/user-rating feedback. Measured outcome values are stored separately.',
     handler: (service, args) => service.recordFeedback(args),
+  },
+  leverage_outcome_record: {
+    local: true,
+    schema: OutcomeMeasurementSchema,
+    description: 'Record a measured outcome against an opportunity or experiment. This is separate from whether the user liked or accepted the recommendation.',
+    handler: (service, args) => service.recordOutcome(args),
   },
   leverage_experiment: {
     local: true,
