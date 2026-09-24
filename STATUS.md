@@ -1,3 +1,50 @@
+# Status — 2026-09-24
+
+**Overall goal incomplete. Host/source preparation is ready for the owner-operated physical Gate-B path; no new 0.1.1 native candidate or real-device Gate-B pass exists yet.**
+
+| Gate | State | Evidence / blocker |
+|---|---|---|
+| A: baseline and architecture | Implemented/documented | Pinned upstreams, notices, architecture, threat model and contract recorded |
+| B: local vertical slice | Host implementation and immutable physical-test handoff ready; actual-device acceptance pending | Green host CI, deterministic retained source artifact, offline package review, hash-bound upgrade generation, physical-test pack generator and fail-closed evidence validator are implemented. Owner must still build the exact 0.1.1 candidate, return its reviewed bytes, approve replacement/activation and run the real-device sequence. |
+| C: remote slice | Blocked by B | Requires a real Gate-B pass, overlay enrollment and genuinely separate networks |
+| D: fidelity/development | Deferred | Hardware calibration, scoped development/deployment and rollback evidence remain gated by B |
+| E: usability/hardening | Partial | CLI/docs and physical-test handoff exist; guided provisioning, authenticated operator workflow and hardware failure coverage remain incomplete |
+
+Current host-side physical-test preparation now includes:
+
+- successful `main` CI retention of the deterministic native-source archive plus its
+  inner SHA-256 sidecar after exact pinned-upstream reproducibility verification;
+- `scripts/device-candidate-package.sh` for the owner-operated, non-root package-only
+  Theos build and offline six-file candidate review;
+- `scripts/prepare_physical_test.py`, which verifies exact source/candidate sidecars,
+  re-reviews the candidate, binds the current package evidence and creates one fresh
+  immutable physical-test pack containing the exact owner upgrade, plan, manifest,
+  checklist and Gate-B evidence template;
+- `scripts/physical_test_evidence.py`, which computes the Gate-B verdict and refuses
+  to call blocked, failed, incomplete, malformed or unevidenced steps a pass; and
+- `docs/PHYSICAL_TEST.md` plus `docs/SMOKE.md` as the canonical owner handoff and
+  real-device acceptance procedure.
+
+PR #11 implementation-head CI run `35996086124` passed the full test suite,
+`npm run check`, pinned-upstream source-bundle verification and verified artifact
+upload. Final-head CI is still required after this STATUS/PLAN/evidence synchronization.
+
+**Next meaningful step:** use the retained verified source artifact associated with a
+successful `main` run. The owner extracts it into a fresh mobile-owned directory and
+runs `./package-candidate.sh` as the non-root mobile user. Return the exact 0.1.1
+`.deb`, `candidate-review.json` and `CANDIDATE_SHA256SUMS` unchanged. The host then
+runs `scripts/prepare_physical_test.py`. Only after explicit owner approval of those
+exact hashes may the owner perform replacement and separately approved activation,
+then execute the physical Gate-B sequence with the owner present. The completed
+`gate-b-evidence.json` must validate to `verdict: pass` before C–E advance.
+
+No grant, deployment, pairing acceptance, SpringBoard reload/respring, passcode or
+biometric action, or device UI input was performed by this 2026-09-24 host work.
+
+---
+
+## Historical status record — through 2026-09-23
+
 # Status — 2026-09-23
 
 **Overall goal incomplete. Host/source verification passes; real iOS observation and cross-network gates remain open.**

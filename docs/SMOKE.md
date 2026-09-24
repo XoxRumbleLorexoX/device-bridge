@@ -19,6 +19,11 @@ scripts/triggers, and has recorded package/payload hashes. It does **not** verif
 signing, installation, native execution, accessibility behavior or device control.
 Use the emitted hashes when preparing the specific owner deployment review.
 
+For the complete pre-physical handoff use `docs/PHYSICAL_TEST.md` and
+`scripts/prepare_physical_test.py`. That wrapper binds the retained CI source bundle,
+native candidate/review sidecar, current package evidence and generated owner
+installer into one fresh test pack before any owner deployment action.
+
 ## B: real local vertical slice
 
 1. Record device hardware/iOS build/bootstrap, package architecture, host toolchain,
@@ -84,4 +89,16 @@ are opt-in and must exclude personal content. Separate:
 - Actual device: native build/install/UI execution and independent recovery.
 - Actual cross-network: topology and disconnect/reauth evidence.
 
-The latter two currently have zero passes. Skipped/blocked tests are never passes.
+Use the generated `gate-b-evidence.json` for the physical run. Validate it with:
+
+```sh
+python3 scripts/physical_test_evidence.py --validate path/to/gate-b-evidence.json
+```
+
+The validator computes the verdict instead of trusting a supplied one. A pass
+requires all nine Gate-B categories to be `pass` with concrete evidence, complete
+device/source identity, owner presence, no passcode/biometric automation and no
+uncertain-mutation replay. A skipped, blocked, failed, incomplete or malformed test
+is never a pass.
+
+Actual device and cross-network Gate B/C passes remain separate from host CI.
