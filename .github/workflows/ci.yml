@@ -14,8 +14,6 @@ jobs:
   host:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      VERIFIED_BUNDLE_DIR: ${{ runner.temp }}/device-bridge-bundle-artifact
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,8 +41,9 @@ jobs:
               raise SystemExit('CI pin disagrees with upstreams.json; review the pin change explicitly.')
           PY
 
-          rm -rf ../ios-mcp "$VERIFIED_BUNDLE_DIR"
-          mkdir -p "$VERIFIED_BUNDLE_DIR"
+          artifact_dir="$RUNNER_TEMP/device-bridge-bundle-artifact"
+          rm -rf ../ios-mcp "$artifact_dir"
+          mkdir -p "$artifact_dir"
           git init -q ../ios-mcp
           git -C ../ios-mcp remote add origin "$expected_url"
           git -C ../ios-mcp fetch -q --depth=1 origin "$expected_commit"
@@ -53,12 +52,12 @@ jobs:
 
           second="$(mktemp -d)"
           trap 'rm -rf "$second" ../ios-mcp' EXIT
-          archive="$VERIFIED_BUNDLE_DIR/device-bridge-build.tar.gz"
+          archive="$artifact_dir/device-bridge-build.tar.gz"
           python3 scripts/prepare_device_bundle.py --output "$archive"
           python3 scripts/prepare_device_bundle.py --output "$second/device-bridge-build.tar.gz"
           cmp "$archive" "$second/device-bridge-build.tar.gz"
-          sha256sum "$archive" | sed "s#  .*#  device-bridge-build.tar.gz#" > "$VERIFIED_BUNDLE_DIR/SHA256SUMS"
-          cat "$VERIFIED_BUNDLE_DIR/SHA256SUMS"
+          sha256sum "$archive" | sed "s#  .*#  device-bridge-build.tar.gz#" > "$artifact_dir/SHA256SUMS"
+          cat "$artifact_dir/SHA256SUMS"
 
           python3 - "$archive" <<'PY'
           from pathlib import PurePosixPath
