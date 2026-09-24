@@ -29,6 +29,12 @@ function doctor() {
 function leverageService() {
   return new LeverageService(new LeverageStore(option('store', defaultLeverageStorePath())));
 }
+function parseScalar(value) {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  const number = Number(value);
+  return value !== '' && Number.isFinite(number) ? number : value;
+}
 async function leverageCommand() {
   const subcommand = argv.shift();
   if (subcommand === 'demo') {
@@ -38,9 +44,11 @@ async function leverageCommand() {
       const service = new LeverageService(new LeverageStore(join(directory, 'store.json')), { clock: () => Date.parse(fixture.as_of) });
       await service.ingest(fixture.events, { provider_id: 'synthetic' });
       const goal = await service.createGoal(fixture.goal);
-      const analysis = await service.analyse({ goal_id: goal.id, time_horizon: '7d', as_of: fixture.as_of });
+      // Fixture snapshot is the day after its seven observed calendar days, so an 8d
+      // rolling query contains that complete seven-day observation period.
+      const analysis = await service.analyse({ goal_id: goal.id, time_horizon: '8d', as_of: fixture.as_of });
       const review = await service.review();
-      print({ synthetic: true, persisted: false, goal, analysis: analysis.analysis, variables: analysis.observations.map(({ variable_id, value, confidence }) => ({ variable_id, value, confidence })), opportunities: analysis.opportunities, value_of_information: analysis.value_of_information, weekly_review: review.text });
+      print({ synthetic: true, persisted: false, goal, analysis: analysis.analysis, outcome_metrics: analysis.outcome_metrics, variables: analysis.observations.map(({ variable_id, value, confidence }) => ({ variable_id, value, confidence })), bottlenecks: analysis.bottlenecks, opportunities: analysis.opportunities, insights: analysis.insights, value_of_information: analysis.value_of_information, weekly_review: review.text });
     } finally { rmSync(directory, { recursive: true, force: true }); }
     return;
   }
@@ -74,6 +82,13 @@ async function leverageCommand() {
     print(await service.recordFeedback({ opportunity_id: opportunityId, status, rating: ratingText ? Number(ratingText) : undefined, reason: option('reason') }));
     return;
   }
+  if (subcommand === 'outcome') {
+    const metricId = option('metric'); const unit = option('unit'); const value = option('value');
+    const opportunityId = option('opportunity'); const experimentId = option('experiment');
+    if (!metricId || !unit || value === undefined || (!opportunityId && !experimentId)) throw Error('leverage outcome requires --metric ID --value VALUE --unit UNIT and --opportunity UUID or --experiment UUID');
+    print(await service.recordOutcome({ opportunity_id: opportunityId, experiment_id: experimentId, metric_id: metricId, value: parseScalar(value), unit, confidence: Number(option('confidence', '1')), note: option('note') }));
+    return;
+  }
   if (subcommand === 'experiment') {
     const opportunityId = option('opportunity');
     if (!opportunityId) throw Error('leverage experiment requires --opportunity UUID');
@@ -84,7 +99,7 @@ async function leverageCommand() {
     print(await service.deleteHistory({ confirm: option('confirm'), retain_goals: option('retain-goals', 'false') === 'true' }));
     return;
   }
-  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | experiment --opportunity UUID [--days 14] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
+  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) | experiment --opportunity UUID [--days 14] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
   if (subcommand) process.exitCode = 2;
 }
 
