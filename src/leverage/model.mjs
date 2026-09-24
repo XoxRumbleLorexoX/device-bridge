@@ -5,6 +5,7 @@ export const PRIVACY_CLASSES = Object.freeze(['PUBLIC', 'PERSONAL', 'PRIVATE', '
 export const PRIVACY_CLASS = z.enum(PRIVACY_CLASSES);
 const identifier = z.string().min(1).max(160).regex(/^[A-Za-z0-9][A-Za-z0-9._:/+-]*$/u);
 const boundedText = z.string().min(1).max(512);
+const scalarValue = z.union([z.number().finite(), z.string().max(256), z.boolean()]);
 
 function jsonObjectWithinLimit(value) {
   try { return Buffer.byteLength(JSON.stringify(value), 'utf8') <= 16 * 1024; } catch { return false; }
@@ -25,11 +26,21 @@ export const EventSchema = z.object({
   raw_event_ref: z.string().max(512).optional(),
 }).strict();
 
+export const OutcomeMetricSchema = z.object({
+  id: identifier,
+  name: z.string().min(1).max(256),
+  domain: identifier,
+  unit: z.string().min(1).max(80).default('unspecified'),
+  direction: z.enum(['increase', 'decrease', 'maintain', 'unspecified']).default('unspecified'),
+  weight: z.number().min(0).max(1).default(0.5),
+}).strict();
+
 export const GoalSchema = z.object({
   id: z.string().uuid().optional(),
   description: boundedText,
   domain: identifier,
   objective_variables: z.array(identifier).max(32).default([]),
+  outcome_metrics: z.array(OutcomeMetricSchema).max(32).default([]),
   target: z.unknown().optional(),
   deadline: z.string().datetime({ offset: true }).optional(),
   priority: z.number().min(0).max(1).default(0.5),
@@ -49,6 +60,21 @@ export const FeedbackSchema = z.object({
   rating: z.number().int().min(1).max(5).optional(),
   reason: z.string().max(1000).optional(),
 }).strict();
+
+export const OutcomeMeasurementSchema = z.object({
+  opportunity_id: z.string().uuid().optional(),
+  experiment_id: z.string().uuid().optional(),
+  metric_id: identifier,
+  timestamp: z.string().datetime({ offset: true }).optional(),
+  value: scalarValue,
+  unit: z.string().min(1).max(80),
+  confidence: z.number().min(0).max(1).default(1),
+  evidence: z.array(z.string().min(1).max(512)).max(64).default([]),
+  note: z.string().max(1000).optional(),
+}).strict().superRefine((measurement, ctx) => {
+  if (!measurement.opportunity_id && !measurement.experiment_id)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Outcome measurement must reference an opportunity or experiment.' });
+});
 
 export const PrivacyPolicySchema = z.object({
   observation_enabled: z.boolean().default(true),
