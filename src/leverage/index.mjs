@@ -7,8 +7,9 @@ export { EventSchema, GoalSchema, FeedbackSchema, OutcomeMetricSchema, OutcomeMe
 export { StaticEventProvider, collectProvider, assertEventProvider } from './providers.mjs';
 export { estimateCapacityShift, syntheticLeverageFixture } from './pipeline.mjs';
 export { deriveOutcomeMetrics, detectBottlenecks, attachOpportunityCosts, enrichLeverageMap, toProactiveInsight } from './reasoning.mjs';
+export { assertDomainModule, discoverDomainCandidates, makeDomainCandidate } from './domains.mjs';
 
-export async function findLeverage(options = {}, { storePath = defaultLeverageStorePath(), clock } = {}) {
-  const service = new LeverageService(new LeverageStore(storePath), clock ? { clock } : undefined);
+export async function findLeverage(options = {}, { storePath = defaultLeverageStorePath(), clock, domainModules = [] } = {}) {
+  const service = new LeverageService(new LeverageStore(storePath), { ...(clock ? { clock } : {}), domainModules });
   return service.analyse(options);
 }
