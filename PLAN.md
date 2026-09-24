@@ -128,3 +128,32 @@ Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to
   activation approval; then re-run observe → fixture launch → observe → tap →
   Unicode verification → cancel. Do not advance C–E until that hardware sequence
   is evidenced.
+
+## Progress 2026-09-24
+
+- Main CI now retains the exact deterministic source archive and inner `SHA256SUMS`
+  after pinned-upstream reproducibility verification, removing the need to recreate
+  the handoff archive manually.
+- Added `scripts/prepare_physical_test.py` to bind the retained source archive,
+  source sidecar, returned native candidate `.deb`, candidate review/sidecar,
+  current package evidence, repository commit and generated immutable owner upgrade
+  into one fresh physical-test pack. Extra/missing sidecar entries, changed bytes,
+  stale reviews, wrong package identity/version/architecture/payload, malformed
+  commit IDs and existing output directories fail closed.
+- Added `scripts/physical_test_evidence.py` with a computed Gate-B verdict. A pass
+  requires all nine physical categories to pass with concrete evidence plus complete
+  source/device identity, owner presence, no passcode/biometric automation and no
+  uncertain mutation replay. Blocked/failed/incomplete/invalid records are never
+  promoted to passes.
+- Added `docs/PHYSICAL_TEST.md` as the canonical handoff from the verified CI artifact
+  through owner native build, immutable replacement preparation, owner approval/
+  activation and the real `docs/SMOKE.md` sequence.
+- PR #11 implementation-head run `35996086124` passed the full tests, syntax checks,
+  pinned-source reproducibility verification and artifact upload. Final-head CI is
+  required after PLAN/STATUS/evidence synchronization.
+- Next action is no longer repository source assembly. The owner must build the
+  `0.1.1` candidate from the retained verified source artifact and return the exact
+  `.deb`, `candidate-review.json` and `CANDIDATE_SHA256SUMS`. The host then runs
+  `prepare_physical_test.py`; after exact owner approval/replacement/activation,
+  execute Gate B physically and validate the completed evidence record. C–E remain
+  blocked until that real-device verdict is `pass`.
