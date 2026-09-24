@@ -31,12 +31,17 @@ test('MCP leverage vertical slice remains local and traceable', async () => {
     assert.equal(ingest.structuredContent.data.accepted_count, fixture.events.length);
     const goalResult = await client.callTool({ name: 'leverage_goal_create', arguments: { goal: fixture.goal } });
     const goalId = goalResult.structuredContent.data.id;
-    const analysis = await client.callTool({ name: 'leverage_find', arguments: { goal_id: goalId, time_horizon: '7d', as_of: fixture.as_of } });
+    const analysis = await client.callTool({ name: 'leverage_find', arguments: { goal_id: goalId, time_horizon: '8d', as_of: fixture.as_of } });
     assert.equal(analysis.isError, false);
+    assert.ok(analysis.structuredContent.data.bottlenecks.some(item => item.type === 'pipeline_stage'));
     const candidate = analysis.structuredContent.data.opportunities.find(item => item.opportunity_key === 'career:application_throughput');
     assert.ok(candidate);
+    assert.equal(candidate.action_authority, 'user_required');
+    const outcome = await client.callTool({ name: 'leverage_outcome_record', arguments: { opportunity_id: candidate.id, metric_id: 'qualified_applications_per_week', value: 6, unit: 'count/week', confidence: 0.9, evidence: ['mcp-test'] } });
+    assert.equal(outcome.structuredContent.data.value, 6);
     const why = await client.callTool({ name: 'leverage_why', arguments: { opportunity_id: candidate.id } });
     assert.deepEqual(why.structuredContent.data.trace.map(step => step.stage), ['observation', 'inference', 'hypothesis', 'recommendation']);
+    assert.equal(why.structuredContent.data.measured_outcomes[0].metric_id, 'qualified_applications_per_week');
     assert.equal(sshCalls(), 0);
   });
 });
