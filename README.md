@@ -6,11 +6,13 @@ independent SSH policy helper. Upstream repositories are preserved.
 
 **Working now:** host CLI and SDK stdio gateway; tested authorization, leases,
 stale-state rejection, durable duplicate/uncertain outcomes; simulated full MCP
-fixture flow. **Native build verified:** fixture and executor compiled, linked and
-signed on the owner phone (iOS 16.2 / 20C65, arm64 + arm64e, Theos SDK 16.5).
-**Not yet verified:** installation, UI control, runtime pairing, remote control,
-deployment/rollback or operator web page. This is not production-ready or
-standalone phone control.
+fixture flow. Historical owner/device evidence also verifies native compilation,
+independent recovery helper setup, restricted forced-command transport, the older
+restricted UI package installation and UI socket activation. **Gate B is still not
+passed:** the latest observation-resilience `0.1.1` UI candidate has not yet been
+built/deployed/activated and the required real observe/tap/Unicode/cancel sequence
+has not passed. Cross-network control, broader deployment/rollback and an operator
+web page remain gated. This is not production-ready or standalone phone control.
 
 ```sh
 git clone https://github.com/XoxRumbleLorexoX/device-bridge.git
@@ -30,7 +32,7 @@ happens automatically.
 - [Setup and pairing](docs/SETUP.md)
 - [Architecture and repository comparison](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY.md) and [capability contract](docs/CONTRACT.md)
-- [Smoke tests and acceptance gates](docs/SMOKE.md)
+- [Physical Gate-B handoff](docs/PHYSICAL_TEST.md) and [smoke/acceptance procedure](docs/SMOKE.md)
 - [Recovery, revocation and uninstall](docs/RECOVERY.md)
 - [Compatibility](docs/COMPATIBILITY.md), [current status](STATUS.md), [evidence](evidence/RESULTS.md)
 
@@ -52,6 +54,7 @@ python3 scripts/prepare_executor.py --output build/executor-reviewed
 ```
 
 Use a fresh destination; preserve any existing upstream checkout. The preparer
-verifies reused source bytes against the pinned commit. See the setup guide for
-the build and owner approval boundaries. Evaluated alternatives are recorded in
-`upstreams.json`; they are not required dependencies.
+verifies reused source bytes against the pinned commit. For the current owner/device
+handoff, use the verified source artifact retained by successful `main` CI and follow
+`docs/PHYSICAL_TEST.md` rather than regenerating deployment inputs ad hoc. Evaluated
+alternatives are recorded in `upstreams.json`; they are not required dependencies.
