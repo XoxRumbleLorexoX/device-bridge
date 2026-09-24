@@ -47,12 +47,8 @@ export const GoalSchema = z.object({
   constraints: z.array(z.string().max(512)).max(32).default([]),
   parent_goal: z.string().uuid().optional(),
   provenance: z.enum(['explicit', 'inferred']).default('explicit'),
-  confirmation_status: z.enum(['confirmed', 'unconfirmed']).default('confirmed'),
-}).strict().superRefine((goal, ctx) => {
-  if (goal.provenance === 'inferred' && goal.confirmation_status !== 'unconfirmed') {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Inferred goals must remain unconfirmed until the user explicitly confirms them.' });
-  }
-});
+  confirmation_status: z.enum(['confirmed', 'unconfirmed']).optional(),
+}).strict();
 
 export const FeedbackSchema = z.object({
   opportunity_id: z.string().uuid(),
@@ -109,7 +105,10 @@ export function canonicalEvent(input) {
 
 export function canonicalGoal(input) {
   const parsed = GoalSchema.parse(input);
-  return { ...parsed, id: parsed.id ?? randomUUID(), created_at: new Date().toISOString() };
+  if (parsed.provenance === 'inferred' && parsed.confirmation_status === 'confirmed')
+    throw new Error('Inferred goals must be confirmed through the explicit goal-confirmation action.');
+  const confirmation_status = parsed.confirmation_status ?? (parsed.provenance === 'inferred' ? 'unconfirmed' : 'confirmed');
+  return { ...parsed, confirmation_status, id: parsed.id ?? randomUUID(), created_at: new Date().toISOString() };
 }
 
 export function boundedConfidence(...values) {
