@@ -115,3 +115,65 @@ Native build follow-up: AppManager and MCPProcessUtil are excluded from prepared
 source and linkage. BridgeUI uses the retained AccessibilityManager foreground
 resolver and a fixture-only LaunchServices dispatch. Unknown foreground identity
 fails closed; no broad app/package methods or Roothide header shim are included.
+
+## MobileLAM host-local leverage architecture (2026-09-24)
+
+Personal Leverage Intelligence is deliberately inserted **beside** the privileged
+transport, not inside it. The gateway now has two classes of MCP tool:
+
+```mermaid
+flowchart LR
+  C[MCP client] --> G[Node gateway]
+  G --> L[Host-local leverage service]
+  L --> S[Structured local leverage store]
+  G --> T[Existing SSH transport]
+  T --> H[Independent device helper]
+  H --> U[Restricted UI adapter]
+```
+
+`leverage_*` tools terminate in `LeverageService` and are tested with a transport
+that throws if called; successful leverage analysis therefore cannot accidentally
+become an SSH/device action. The existing `bridge_*` tools retain their prior
+identity, deadline, grant, lease/fence and recovery path.
+
+The leverage store is independent from the helper's privileged SQLite request
+journal. Personal history therefore does not gain root/device scope merely because
+DeviceBridge also has a control channel.
+
+### Data flow
+
+```text
+explicit provider events
+  -> privacy gate
+  -> canonical events
+  -> semantic activities
+  -> variable definitions + observations
+  -> goals + outcome metrics
+  -> repetition/friction + bottlenecks
+  -> leverage candidates + counterfactual assumptions
+  -> transparent ranking
+  -> proactive insight / why trace
+  -> user feedback and/or bounded experiment
+  -> measured outcomes
+```
+
+Observation, inference, hypothesis, recommendation and measured outcome are stored
+as different concepts. Candidate output is marked `action_authority: user_required`
+and `action_state: recommendation_only`; no recommendation executor was added.
+
+### Extension boundaries
+
+Event providers implement the `providers.mjs` contract and produce canonicalizable
+events. They do not inherit DeviceBridge credentials.
+
+Life-domain modules implement `domains.mjs`. A module receives a read-only structured
+analysis snapshot plus a constrained `makeCandidate()` factory. Module candidates
+then pass through the same baseline-confidence adjustment, feedback suppression,
+ranking, human-authority markers and traceability as built-in candidates. This keeps
+career, learning, business, health-supportive habits or other future logic outside
+platform integration.
+
+The built-in MVP still contains deliberately narrow career/repetition heuristics;
+those are an initial vertical slice, not the final taxonomy or causal model. See
+`docs/LEVERAGE.md` for the implemented schemas, privacy policy, MCP/CLI API and
+current limitations.
