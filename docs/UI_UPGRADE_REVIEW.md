@@ -84,6 +84,12 @@ from/to versions and recovery plan when requesting the owner's specific deployme
 approval. Any rebuild, package change, review change or installer change requires a
 new review; approval for an earlier hash does not transfer.
 
+For the physical-test handoff, prefer the stricter wrapper in
+`docs/PHYSICAL_TEST.md`: `scripts/prepare_physical_test.py` also verifies the
+retained CI source-bundle sidecar and `CANDIDATE_SHA256SUMS`, then calls this
+immutable-upgrade generator and emits a bound manifest, checklist and Gate-B
+evidence template in one fresh output directory.
+
 ## 3. Owner execution boundary
 
 The generated installer is intentionally not self-elevating. The owner runs it in
