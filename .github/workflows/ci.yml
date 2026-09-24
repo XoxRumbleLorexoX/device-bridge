@@ -14,6 +14,8 @@ jobs:
   host:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      VERIFIED_BUNDLE_DIR: ${{ runner.temp }}/device-bridge-bundle-artifact
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -41,23 +43,25 @@ jobs:
               raise SystemExit('CI pin disagrees with upstreams.json; review the pin change explicitly.')
           PY
 
-          rm -rf ../ios-mcp
+          rm -rf ../ios-mcp "$VERIFIED_BUNDLE_DIR"
+          mkdir -p "$VERIFIED_BUNDLE_DIR"
           git init -q ../ios-mcp
           git -C ../ios-mcp remote add origin "$expected_url"
           git -C ../ios-mcp fetch -q --depth=1 origin "$expected_commit"
           git -C ../ios-mcp checkout -q --detach FETCH_HEAD
           test "$(git -C ../ios-mcp rev-parse HEAD)" = "$expected_commit"
 
-          out="$(mktemp -d)"
-          trap 'rm -rf "$out" ../ios-mcp' EXIT
-          python3 scripts/prepare_device_bundle.py --output "$out/one.tar.gz"
-          python3 scripts/prepare_device_bundle.py --output "$out/two.tar.gz"
-          cmp "$out/one.tar.gz" "$out/two.tar.gz"
-          sha256sum "$out/one.tar.gz" "$out/two.tar.gz"
+          second="$(mktemp -d)"
+          trap 'rm -rf "$second" ../ios-mcp' EXIT
+          archive="$VERIFIED_BUNDLE_DIR/device-bridge-build.tar.gz"
+          python3 scripts/prepare_device_bundle.py --output "$archive"
+          python3 scripts/prepare_device_bundle.py --output "$second/device-bridge-build.tar.gz"
+          cmp "$archive" "$second/device-bridge-build.tar.gz"
+          sha256sum "$archive" | sed "s#  .*#  device-bridge-build.tar.gz#" > "$VERIFIED_BUNDLE_DIR/SHA256SUMS"
+          cat "$VERIFIED_BUNDLE_DIR/SHA256SUMS"
 
-          python3 - "$out/one.tar.gz" <<'PY'
+          python3 - "$archive" <<'PY'
           from pathlib import PurePosixPath
-          import stat
           import sys
           import tarfile
 
@@ -86,3 +90,13 @@ jobs:
                   raise SystemExit(f'Non-deterministic archive metadata: {member.name}')
           print(f'Pinned bundle verified: {len(members)} regular/directory entries; deterministic bytes match.')
           PY
+      - name: Upload verified native source bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-bridge-native-source-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/device-bridge-bundle-artifact/device-bridge-build.tar.gz
+            ${{ runner.temp }}/device-bridge-bundle-artifact/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
