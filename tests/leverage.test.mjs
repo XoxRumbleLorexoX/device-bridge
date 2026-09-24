@@ -22,7 +22,9 @@ test('synthetic earning-power fixture runs end-to-end with traceable opportuniti
   const ingested = await service.ingest(fixture.events, { provider_id: 'synthetic' });
   assert.equal(ingested.accepted_count, fixture.events.length);
   const goal = await service.createGoal(fixture.goal);
-  const result = await service.analyse({ goal_id: goal.id, time_horizon: '7d', as_of: fixture.as_of });
+  // The fixture snapshot is timestamped the day after its seven observed calendar days,
+  // so an 8d rolling query contains the complete 7d observation period.
+  const result = await service.analyse({ goal_id: goal.id, time_horizon: '8d', as_of: fixture.as_of });
 
   const observed = new Map(result.observations.map(item => [item.variable_id, item.value]));
   assert.equal(observed.get('time.career.job_discovery_hours'), 5.3);
