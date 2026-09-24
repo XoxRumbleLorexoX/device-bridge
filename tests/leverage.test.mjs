@@ -17,14 +17,16 @@ async function harness() {
   return { dir, fixture, store, service };
 }
 
+async function analyseFixture(service, fixture) {
+  await service.ingest(fixture.events, { provider_id: 'synthetic' });
+  const goal = await service.createGoal(fixture.goal);
+  const result = await service.analyse({ goal_id: goal.id, time_horizon: '8d', as_of: fixture.as_of });
+  return { goal, result };
+}
+
 test('synthetic earning-power fixture runs end-to-end with traceable opportunities', async () => {
   const { fixture, store, service } = await harness();
-  const ingested = await service.ingest(fixture.events, { provider_id: 'synthetic' });
-  assert.equal(ingested.accepted_count, fixture.events.length);
-  const goal = await service.createGoal(fixture.goal);
-  // The fixture snapshot is timestamped the day after its seven observed calendar days,
-  // so an 8d rolling query contains the complete 7d observation period.
-  const result = await service.analyse({ goal_id: goal.id, time_horizon: '8d', as_of: fixture.as_of });
+  const { goal, result } = await analyseFixture(service, fixture);
 
   const observed = new Map(result.observations.map(item => [item.variable_id, item.value]));
   assert.equal(observed.get('time.career.job_discovery_hours'), 5.3);
@@ -32,6 +34,7 @@ test('synthetic earning-power fixture runs end-to-end with traceable opportuniti
   assert.equal(observed.get('time.work.development_hours'), 12);
   assert.equal(observed.get('time.personal_admin.administration_hours'), 4);
   assert.equal(result.analysis.baseline.state, 'initial');
+  assert.ok(result.outcome_metrics.some(metric => metric.id === 'income' && metric.direction === 'unspecified'));
   assert.ok(result.opportunities.some(item => item.opportunity_key === 'career:application_throughput'));
   assert.ok(result.opportunities.some(item => item.intervention_type === 'AUTOMATION'));
   assert.deepEqual(result.value_of_information, ['career.application_to_interview_conversion']);
@@ -42,29 +45,58 @@ test('synthetic earning-power fixture runs end-to-end with traceable opportuniti
   assert.ok(career.alternatives.some(value => /quality/u.test(value)));
   assert.equal(typeof career.ranking.dimensions.confidence, 'number');
   assert.match(career.ranking.explanation, /not an estimate of truth/u);
+  assert.equal(career.action_authority, 'user_required');
+  assert.equal(career.action_state, 'recommendation_only');
+  assert.equal(career.opportunity_cost.ranking, 'not_ranked');
+
+  const careerBottleneck = result.bottlenecks.find(item => item.type === 'pipeline_stage');
+  assert.ok(careerBottleneck);
+  assert.ok(careerBottleneck.competing_hypotheses.some(value => /quality/u.test(value)));
+  assert.ok(careerBottleneck.missing_variables.includes('career.application_to_interview_conversion'));
+  const manualBottleneck = result.bottlenecks.find(item => item.type === 'repeated_manual_work');
+  assert.match(manualBottleneck.statement, /4 observed hours\/week/u);
+
+  const automation = result.opportunities.find(item => item.intervention_type === 'AUTOMATION');
+  assert.equal(automation.lever.current_value, 4);
+  assert.match(automation.expected_effect, /156 hours/u);
+  assert.equal(automation.opportunity_cost.ranking, 'not_ranked');
 
   const why = await service.why(career.id);
   assert.deepEqual(why.trace.map(step => step.stage), ['observation', 'inference', 'hypothesis', 'recommendation']);
   assert.ok(why.assumptions.length >= 2);
   assert.ok(why.missing_variables.includes('career.application_to_interview_conversion'));
+  assert.ok(why.bottlenecks.length >= 1);
+  assert.equal(why.measured_outcomes.length, 0);
 
   assert.ok(result.leverage_map.edges.some(edge => edge.relationship_type === 'ENABLES' && edge.claim_type === 'hypothesis'));
   assert.ok(result.leverage_map.nodes.some(node => node.id === `goal:${goal.id}`));
+  assert.ok(result.leverage_map.nodes.some(node => node.type === 'bottleneck'));
+  assert.ok(result.insights.some(insight => insight.id === career.id && /Filtering|filtering/u.test(insight.hypothesis)));
 
   const review = await service.review();
   assert.match(review.text, /WEEKLY LEVERAGE REVIEW/u);
   assert.match(review.text, /Potential lever/u);
-  assert.ok(review.repeated_workflow);
+  assert.equal(review.repeated_workflow.executions, 8);
+  assert.equal(review.repeated_workflow.weekly_hours, 4);
 
   const mode = await stat(store.path);
   if (process.platform !== 'win32') assert.equal(mode.mode & 0o777, 0o600);
 });
 
-test('privacy exclusions and sensitive consent are enforced before persistence', async () => {
-  const { fixture, service } = await harness();
-  await service.updatePrivacy({ excluded_applications: ['LinkedIn'] });
+test('privacy exclusions, time windows and sensitive consent are enforced before persistence', async () => {
+  const { fixture, service, store } = await harness();
+  await service.updatePrivacy({
+    excluded_applications: ['LinkedIn'],
+    excluded_domains: ['private.example'],
+    excluded_periods: [{ start: '2026-09-21T12:00:00.000Z', end: '2026-09-21T13:00:00.000Z' }],
+  });
   const result = await service.ingest(fixture.events);
   assert.equal(result.rejected.filter(item => item.reason === 'application_excluded').length, 5);
+
+  const domainEvent = { ...fixture.events[0], id: undefined, application: 'Browser', timestamp: '2026-09-21T10:00:00.000Z', context: { domain: 'sub.private.example' } };
+  assert.equal((await service.ingest([domainEvent])).rejected[0].reason, 'domain_excluded');
+  const periodEvent = { ...fixture.events[0], id: undefined, application: 'Browser', timestamp: '2026-09-21T12:30:00.000Z', context: {} };
+  assert.equal((await service.ingest([periodEvent])).rejected[0].reason, 'period_excluded');
 
   await assert.rejects(() => service.updatePrivacy({ allowed_privacy_classes: ['PUBLIC', 'SENSITIVE'] }), /sensitive_consent/u);
   await service.updatePrivacy({ allowed_privacy_classes: ['PUBLIC', 'PERSONAL', 'PRIVATE', 'SENSITIVE'], sensitive_consent: true });
@@ -74,6 +106,24 @@ test('privacy exclusions and sensitive consent are enforced before persistence',
   await service.updatePrivacy({ observation_enabled: false });
   const paused = await service.ingest([{ ...fixture.events[1], id: undefined, timestamp: '2026-09-21T21:00:00.000Z' }]);
   assert.equal(paused.rejected[0].reason, 'observation_paused');
+  const state = await store.read();
+  assert.equal(state.events.some(event => event.context?.domain === 'sub.private.example'), false);
+  assert.equal(state.events.some(event => event.timestamp === '2026-09-21T12:30:00.000Z'), false);
+});
+
+test('confidence propagates from telemetry into inferred leverage confidence', async () => {
+  const high = await harness();
+  const highAnalysis = (await analyseFixture(high.service, high.fixture)).result;
+  const highCandidate = highAnalysis.opportunities.find(item => item.opportunity_key === 'career:application_throughput');
+
+  const low = await harness();
+  const lowEvents = low.fixture.events.map(event => ({ ...event, confidence: 0.2 }));
+  await low.service.ingest(lowEvents);
+  const lowGoal = await low.service.createGoal(low.fixture.goal);
+  const lowAnalysis = await low.service.analyse({ goal_id: lowGoal.id, time_horizon: '8d', as_of: low.fixture.as_of });
+  const lowCandidate = lowAnalysis.opportunities.find(item => item.opportunity_key === 'career:application_throughput');
+  assert.ok(lowCandidate.confidence < highCandidate.confidence);
+  assert.ok(lowCandidate.ranking.dimensions.confidence < highCandidate.ranking.dimensions.confidence);
 });
 
 test('dismissed evidence-equivalent opportunity stays suppressed until evidence changes', async () => {
@@ -91,21 +141,31 @@ test('dismissed evidence-equivalent opportunity stays suppressed until evidence 
   assert.equal(result.opportunities.some(item => item.opportunity_key === target.opportunity_key), true);
 });
 
-test('experiment keeps causal uncertainty explicit and history deletion is confirmed', async () => {
-  const { fixture, service } = await harness();
-  await service.ingest(fixture.events);
-  const goal = await service.createGoal(fixture.goal);
-  const result = await service.analyse({ goal_id: goal.id, time_horizon: '7d', as_of: fixture.as_of });
+test('experiment, measured outcome and recommendation feedback remain distinct records', async () => {
+  const { fixture, service, store } = await harness();
+  const { result } = await analyseFixture(service, fixture);
   const target = result.opportunities.find(item => item.opportunity_key === 'career:application_throughput');
   const experiment = await service.createExperiment({ opportunity_id: target.id, period_days: 14 });
   assert.equal(experiment.status, 'planned');
+  assert.equal(experiment.action_authority, 'user_required');
   assert.match(experiment.hypothesis, /may/u);
   assert.ok(experiment.metrics.includes('career.application_to_interview_conversion'));
+
+  const measurement = await service.recordOutcome({ opportunity_id: target.id, experiment_id: experiment.id, metric_id: 'qualified_applications_per_week', value: 6, unit: 'count/week', confidence: 0.9, evidence: ['experiment-week-1'] });
+  assert.equal(measurement.value, 6);
+  await service.recordFeedback({ opportunity_id: target.id, status: 'completed', rating: 4 });
+  const state = await store.read();
+  assert.equal(state.outcome_measurements.length, 1);
+  assert.equal(state.feedback.length, 1);
+  const why = await service.why(target.id);
+  assert.equal(why.measured_outcomes[0].metric_id, 'qualified_applications_per_week');
+
   await assert.rejects(() => service.deleteHistory({ confirm: 'yes' }), /DELETE_LEVERAGE_HISTORY/u);
   const deleted = await service.deleteHistory({ confirm: 'DELETE_LEVERAGE_HISTORY', retain_goals: true });
   assert.equal(deleted.goals_retained, true);
   assert.equal((await service.goals()).length, 1);
   assert.deepEqual(await service.opportunities(), []);
+  assert.equal((await store.read()).outcome_measurements.length, 0);
 });
 
 test('counterfactual capacity arithmetic exposes assumptions instead of claiming outcome gain', () => {
