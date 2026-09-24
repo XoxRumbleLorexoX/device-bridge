@@ -1,18 +1,31 @@
 # Device Bridge
 
-Experimental, fixture-scoped MCP gateway for an owner-controlled jailbroken iPhone.
-It reuses pinned **ios-mcp** UI modules behind a restricted Unix socket and an
-independent SSH policy helper. Upstream repositories are preserved.
+Experimental, fixture-scoped MCP gateway for an owner-controlled jailbroken iPhone,
+plus a host-local **MobileLAM / Personal Leverage Intelligence** layer. DeviceBridge
+reuses pinned **ios-mcp** UI modules behind a restricted Unix socket and an independent
+SSH policy helper; MobileLAM turns explicitly ingested behavioural events into
+traceable activities, variables, bottleneck hypotheses, leverage opportunities,
+experiments and measured outcomes. Upstream repositories are preserved.
 
-**Working now:** host CLI and SDK stdio gateway; tested authorization, leases,
-stale-state rejection, durable duplicate/uncertain outcomes; simulated full MCP
-fixture flow. Historical owner/device evidence also verifies native compilation,
+**DeviceBridge working now:** host CLI and SDK stdio gateway; tested authorization,
+leases, stale-state rejection, durable duplicate/uncertain outcomes; simulated full
+MCP fixture flow. Historical owner/device evidence also verifies native compilation,
 independent recovery helper setup, restricted forced-command transport, the older
 restricted UI package installation and UI socket activation. **Gate B is still not
 passed:** the latest observation-resilience `0.1.1` UI candidate has not yet been
 built/deployed/activated and the required real observe/tap/Unicode/cancel sequence
 has not passed. Cross-network control, broader deployment/rollback and an operator
-web page remain gated. This is not production-ready or standalone phone control.
+web page remain gated.
+
+**MobileLAM MVP working now:** canonical privacy-classified event ingestion; semantic
+activity sessions; structured variables/observations/goals/outcome metrics; repeated
+workflow and friction detection; bottleneck hypotheses with competing explanations;
+transparent leverage ranking; opportunity-cost alternatives; value-of-information;
+proactive insight/why traces; experiments; feedback; separately recorded measured
+outcomes; local structured persistence; pluggable provider/domain contracts; MCP,
+CLI and programmatic APIs; and a reproducible earning-power synthetic fixture.
+MobileLAM does not observe apps automatically yet and does not execute recommendations.
+This repository is not production-ready.
 
 ```sh
 git clone https://github.com/XoxRumbleLorexoX/device-bridge.git
@@ -22,13 +35,21 @@ npm test
 npm run check
 node src/cli.mjs setup
 node src/cli.mjs readiness
+npm run leverage:demo
 node src/cli.mjs connect codex
 ```
 
+The leverage demo is synthetic and non-persistent. It demonstrates 5.3 hours of job
+discovery, 2 applications, 12 hours development, 4 hours repeated administration,
+a career goal, a repeated-work automation candidate and the missing application →
+interview conversion variable needed to distinguish volume from quality hypotheses.
+
 Tests require Python 3 and a C compiler in addition to Node. They do not touch the phone. Some tests bind a temporary local Unix socket and
 need permission in sandboxes. No installation, grant, respring or config edit
-happens automatically.
+happens automatically. Leverage MCP tests explicitly assert that local leverage
+calls do not invoke the SSH/device transport.
 
+- [MobileLAM / Personal Leverage Intelligence](docs/LEVERAGE.md)
 - [Setup and pairing](docs/SETUP.md)
 - [Architecture and repository comparison](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY.md) and [capability contract](docs/CONTRACT.md)
@@ -36,13 +57,22 @@ happens automatically.
 - [Recovery, revocation and uninstall](docs/RECOVERY.md)
 - [Compatibility](docs/COMPATIBILITY.md), [current status](STATUS.md), [evidence](evidence/RESULTS.md)
 
-`bridge readiness` is the machine-readable acceptance summary. It is deliberately fail-closed: host/simulated test success cannot mark native hardware or cross-network gates verified.
+`bridge readiness` is the machine-readable DeviceBridge acceptance summary. It is
+deliberately fail-closed: host/simulated test success cannot mark native hardware or
+cross-network gates verified. MobileLAM host analysis does not alter that status.
 - [Licensing and local patches](THIRD_PARTY_NOTICES.md)
 
-Only fixture observation, launch, observed element taps and bounded Unicode
-insertion are exposed. Root shell, arbitrary apps/URLs, package/file writes,
-clipboard, submission, multi-touch and uncalibrated generic gestures are disabled.
-Screen content returned through MCP may be sent to the selected model provider.
+Only fixture observation, launch, observed element taps and bounded Unicode insertion
+are exposed through the privileged DeviceBridge path. Root shell, arbitrary apps/URLs,
+package/file writes, clipboard, submission, multi-touch and uncalibrated generic
+gestures are disabled. Screen content returned through MCP may be sent to the selected
+model provider.
+
+MobileLAM is a separate host-local path. Its default store is
+`~/.local/share/device-bridge/leverage-store.json`; sensitive/restricted event classes
+require explicit consent, applications/domains/sources/periods can be excluded,
+observation can be paused, retention is bounded, and history deletion requires an
+explicit confirmation string. See `docs/LEVERAGE.md` for the exact model and limits.
 
 For native source preparation only, clone the selected upstream beside this repository
 and check out the recorded revision (host tests do not require this checkout):
