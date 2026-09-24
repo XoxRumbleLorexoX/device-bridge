@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { verifyHostKey } from './pairing.mjs';
-import { resolve, dirname } from 'node:path';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { verifyHostKey } from './pairing.mjs';
 import { loadConfig, SSHTransport } from './transport.mjs';
 import { serve, envelope } from './gateway.mjs';
 import { readinessReport } from './readiness.mjs';
+import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture } from './leverage/index.mjs';
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const command = argv.shift();
@@ -20,15 +23,79 @@ function doctor() {
   const commands = { node: process.version, codex: version('codex'), python: version('python3'), ssh: version('ssh', ['-V']),
     ios_sdk: version('xcrun', ['--sdk', 'iphoneos', '--show-sdk-path']), go: version('go', ['version']), tailscale: version('tailscale', ['version']) };
   print({ state: 'reduced_capability', host: commands, theos: !!process.env.THEOS && existsSync(resolve(process.env.THEOS, 'makefiles/common.mk')),
-    device: 'unverified: use pair with a locally verified host key, then status',
-    next_steps: ['Install a supported Xcode/iPhoneOS SDK and Theos for native builds.', 'Read docs/SETUP.md before provisioning the restricted helper.', 'No package installs or configuration changes are performed by doctor.'] });
+    device: 'unverified: use pair with a locally verified host key, then status', leverage_store: defaultLeverageStorePath(),
+    next_steps: ['Install a supported Xcode/iPhoneOS SDK and Theos for native builds.', 'Read docs/SETUP.md before provisioning the restricted helper.', 'Run bridge leverage demo for the local Personal Leverage Intelligence synthetic vertical slice.', 'No package installs or configuration changes are performed by doctor.'] });
 }
+function leverageService() {
+  return new LeverageService(new LeverageStore(option('store', defaultLeverageStorePath())));
+}
+async function leverageCommand() {
+  const subcommand = argv.shift();
+  if (subcommand === 'demo') {
+    const fixture = syntheticLeverageFixture();
+    const directory = mkdtempSync(join(tmpdir(), 'device-bridge-leverage-demo-'));
+    try {
+      const service = new LeverageService(new LeverageStore(join(directory, 'store.json')), { clock: () => Date.parse(fixture.as_of) });
+      await service.ingest(fixture.events, { provider_id: 'synthetic' });
+      const goal = await service.createGoal(fixture.goal);
+      const analysis = await service.analyse({ goal_id: goal.id, time_horizon: '7d', as_of: fixture.as_of });
+      const review = await service.review();
+      print({ synthetic: true, persisted: false, goal, analysis: analysis.analysis, variables: analysis.observations.map(({ variable_id, value, confidence }) => ({ variable_id, value, confidence })), opportunities: analysis.opportunities, value_of_information: analysis.value_of_information, weekly_review: review.text });
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+    return;
+  }
+  const service = leverageService();
+  if (subcommand === 'ingest') {
+    const file = option('file');
+    if (!file) throw Error('leverage ingest requires --file PATH containing an event array or {"events": [...]}');
+    const parsed = JSON.parse(readFileSync(file, 'utf8'));
+    const events = Array.isArray(parsed) ? parsed : parsed.events;
+    print(await service.ingest(events, { provider_id: option('provider', 'manual-file') }));
+    return;
+  }
+  if (subcommand === 'goal') {
+    const description = option('description'); const domain = option('domain');
+    if (!description || !domain) throw Error('leverage goal requires --description TEXT --domain DOMAIN');
+    const objectiveVariables = (option('objectives', '') || '').split(',').map(value => value.trim()).filter(Boolean);
+    const priority = Number(option('priority', '0.5'));
+    print(await service.createGoal({ description, domain, objective_variables: objectiveVariables, priority, constraints: [] }));
+    return;
+  }
+  if (subcommand === 'find') {
+    print(await service.analyse({ domain: option('domain'), goal_id: option('goal'), time_horizon: option('horizon', '30d'), as_of: option('as-of') }));
+    return;
+  }
+  if (subcommand === 'review') { print(await service.review()); return; }
+  if (subcommand === 'privacy') { print(await service.privacy()); return; }
+  if (subcommand === 'feedback') {
+    const opportunityId = option('opportunity'); const status = option('status');
+    if (!opportunityId || !status) throw Error('leverage feedback requires --opportunity UUID --status STATUS');
+    const ratingText = option('rating');
+    print(await service.recordFeedback({ opportunity_id: opportunityId, status, rating: ratingText ? Number(ratingText) : undefined, reason: option('reason') }));
+    return;
+  }
+  if (subcommand === 'experiment') {
+    const opportunityId = option('opportunity');
+    if (!opportunityId) throw Error('leverage experiment requires --opportunity UUID');
+    print(await service.createExperiment({ opportunity_id: opportunityId, period_days: Number(option('days', '14')) }));
+    return;
+  }
+  if (subcommand === 'delete-history') {
+    print(await service.deleteHistory({ confirm: option('confirm'), retain_goals: option('retain-goals', 'false') === 'true' }));
+    return;
+  }
+  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | experiment --opportunity UUID [--days 14] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
+  if (subcommand) process.exitCode = 2;
+}
+
 try {
   if (command === 'doctor' || command === 'setup') {
     doctor();
     if (command === 'setup') process.stdout.write('\nSetup guide: ' + resolve(root, 'docs/SETUP.md') + '\nConfig template: ' + resolve(root, 'docs/gateway.example.json') + '\n');
   } else if (command === 'readiness') {
     print(readinessReport());
+  } else if (command === 'leverage') {
+    await leverageCommand();
   } else if (command === 'serve') {
     await serve(option('config', '/etc/device-bridge/gateway.json'));
   } else if (command === 'pair') {
@@ -56,13 +123,12 @@ try {
     if (!help.includes('COMMAND')) throw Error('Installed Codex CLI integration syntax is unverified.');
     const config = option('config', '/etc/device-bridge/gateway.json');
     const entry = `[mcp_servers.device_bridge]\ncommand = ${JSON.stringify(process.execPath)}\nargs = ${JSON.stringify([resolve(root, 'src/cli.mjs'), 'serve', '--config', config])}\n`;
-    // Print-only by design; live configuration changes require an independent owner install.
     process.stdout.write(`# Verified installed client: ${installed}\n# Back up config.toml and add this table if the name is unused.\n` + entry);
   } else if (command === 'revoke' || command === 'uninstall') {
     print({ status: 'owner_action_required', next_step: `Use the independent administrative channel described in ${resolve(root, 'docs/RECOVERY.md')}. The agent credential cannot administer itself.`, command: `owner.py ${command}` });
     process.exitCode = 2;
   } else {
-    process.stdout.write('bridge setup | doctor | readiness | pair --host HOST --fingerprint SHA256:... --output PATH [--key-type ed25519|ecdsa] | status | capabilities | serve | connect codex | stop --session UUID | revoke | uninstall\n');
+    process.stdout.write('bridge setup | doctor | readiness | leverage ... | pair --host HOST --fingerprint SHA256:... --output PATH [--key-type ed25519|ecdsa] | status | capabilities | serve | connect codex | stop --session UUID | revoke | uninstall\n');
     if (command) process.exitCode = 2;
   }
 } catch (error) {
