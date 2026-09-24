@@ -157,3 +157,54 @@ Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to
   `prepare_physical_test.py`; after exact owner approval/replacement/activation,
   execute Gate B physically and validate the completed evidence record. C–E remain
   blocked until that real-device verdict is `pass`.
+
+## MobileLAM / Personal Leverage Intelligence MVP — 2026-09-24
+
+- Inspected the existing gateway, CLI, helper journal, storage boundaries, tests and
+  architecture before choosing an insertion point. Personal telemetry remains on the
+  host; it is not mixed into the privileged device mutation journal.
+- Added a canonical privacy-classified event schema plus an explicit provider contract.
+  Observation can be paused and filtered by privacy class, application, domain,
+  source and time period before accepted events are persisted. Sensitive/restricted
+  classes require explicit consent; retention is bounded.
+- Added structured local memory for events, activities, repetition records, variable
+  definitions, observations, goals, outcome metrics, bottlenecks, opportunities,
+  causal/leverage graph, experiments, measured outcomes and user feedback. Storage
+  is atomic and host-local with restrictive filesystem permissions.
+- Implemented event → semantic activity → variable/observation aggregation, repeated
+  workflow/friction detection, baseline confidence adjustment, generic goal/outcome
+  representation, bottleneck records with competing hypotheses, value-of-information,
+  deterministic capacity counterfactuals, transparent multi-dimensional ranking,
+  non-ranked opportunity-cost alternatives, proactive insights and inspectable
+  observation → inference → hypothesis → recommendation traces.
+- Added feedback adaptation that suppresses an evidence-equivalent dismissed
+  opportunity until its evidence changes. Recommendation feedback and measured
+  outcomes are separate records and APIs.
+- Added bounded experiment plans for uncertain causal claims. Recommendations and
+  experiments remain `user_required`; no automatic leverage action executor exists.
+- Added a life-domain plug-in contract. Domain modules receive read-only structured
+  context plus a constrained candidate factory and then enter the same confidence,
+  ranking, feedback, authority and traceability pipeline.
+- Added host-local MCP tools, CLI commands and a programmatic `findLeverage()` API.
+  Existing DeviceBridge MCP tools keep their prior transport/authorization path;
+  leverage tests assert zero SSH/device transport calls.
+- Added a reproducible synthetic earning-power fixture: 5.3h job discovery, two
+  applications, 12h development, 4h repeated administration/manual CV entry, an
+  explicit career goal and missing application → interview conversion. The engine
+  surfaces both a repeated-work automation lever and a career throughput hypothesis
+  while preserving application-quality/selectivity as competing explanations.
+- Added regression coverage for privacy exclusions/consent, activity/variable
+  extraction, repetition, bottlenecks, confidence propagation, counterfactual
+  arithmetic, feedback suppression/reappearance, experiments, measured outcomes,
+  MCP locality, CLI demonstration and pluggable domain modules.
+- Initial PR #12 CI exposed a synthetic rolling-window fixture mismatch rather than
+  analysis arithmetic; the test was corrected to include the complete seven observed
+  calendar days. Follow-up implementation-head run `36001161814` passed `npm test`,
+  `npm run check`, pinned-source reproducibility verification and artifact upload.
+  A final-head run remains required after the expanded outcome/domain/documentation
+  work in this section.
+- Next leverage milestones after the MVP: real opt-in providers (starting with low-
+  sensitivity development/calendar metadata), richer provider-supplied taxonomies,
+  generalized threshold/nonlinearity discovery, stronger experiment evaluation,
+  encrypted application-level persistence where needed, and UI visualization. None
+  of those are implied by the MVP.

@@ -17,11 +17,11 @@ async function linked(transport, callback) {
   try { await callback(client); } finally { await client.close(); await server.close(); }
 }
 
-test('SDK negotiation and stable tool list expose no broad powers', async () => {
+test('SDK negotiation and stable tool list expose no broad device powers', async () => {
   await linked({ call() { throw Error('unexpected'); } }, async client => {
     const list = await client.listTools();
     assert.deepEqual(list.tools.map(t => t.name).sort(), Object.keys(tools).sort());
-    assert.equal(list.tools.length, 10);
+    assert.equal(list.tools.length, Object.keys(tools).length);
     assert.ok(!list.tools.some(t => /shell|file|package|url|approve/.test(t.name)));
     const result = await client.callTool({ name: 'bridge_devices', arguments: {} });
     assert.equal(result.structuredContent.data.devices[0].state, 'unverified');
