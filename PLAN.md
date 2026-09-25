@@ -208,3 +208,32 @@ Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to
   generalized threshold/nonlinearity discovery, stronger experiment evaluation,
   encrypted application-level persistence where needed, and UI visualization. None
   of those are implied by the MVP.
+
+## MobileLAM repeated-sequence/friction milestone — 2026-09-25
+
+- Extended repetition analysis from identical actions to recurring bounded multi-step
+  sequences. The miner requires repeated non-overlapping occurrences inside bounded
+  session gaps and suppresses shorter redundant subsequences when a longer sequence
+  explains the same executions.
+- Added structured friction records for rapid cross-app transitions/bounce-backs,
+  short retry loops, repeated information retrieval and recurring multi-step work.
+  These records are explicitly signals, not judgments or proof of waste/failure.
+- Added sequence/friction variables, storage collections, schema-v1 backfill,
+  bottleneck types and leverage candidates. External domain modules receive the new
+  records read-only through their existing context contract.
+- Friction-derived recommendations preserve competing hypotheses and use small,
+  reversible interventions: workflow compression, batching experiments, root-cause
+  inspection/validation and saved retrieval. No automatic execution was added.
+- Repeated-search statements avoid echoing raw query text; providers may use an opaque
+  `query_hash`. SENSITIVE/RESTRICTED sequences receive lower automation-feasibility
+  estimates even after explicit collection consent.
+- Added regression coverage for gap boundaries, overlap/subsequence inflation,
+  privacy-sensitive feasibility, app bounce-backs, retry loops, raw-query
+  non-disclosure, variable extraction, storage migration, ranking/traceability and
+  `user_required` action authority.
+- PR #14 implementation-head run `36148511610` passed the full tests/checks, pinned
+  native-source reproducibility verification and artifact upload. Documentation and
+  governance synchronization still require an exact final-head CI pass before merge.
+- Next leverage milestones: opt-in real providers, provider-level minimization/redaction,
+  generalized threshold/nonlinearity discovery, experiment result evaluation and a
+  UI leverage map. DeviceBridge Gate B remains a separate owner/device acceptance gate.
