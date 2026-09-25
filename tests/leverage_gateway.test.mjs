@@ -46,6 +46,22 @@ test('MCP leverage vertical slice remains local and traceable', async () => {
   });
 });
 
+test('inferred goal confirmation is a separate local MCP action', async () => {
+  await withClient(async ({ client, fixture, sshCalls }) => {
+    const invalid = await client.callTool({ name: 'leverage_goal_create', arguments: { goal: { ...fixture.goal, provenance: 'inferred', confirmation_status: 'confirmed' } } });
+    assert.equal(invalid.isError, true);
+    assert.match(invalid.structuredContent.error.next_step, /goal-confirmation action/u);
+
+    const created = await client.callTool({ name: 'leverage_goal_create', arguments: { goal: { ...fixture.goal, provenance: 'inferred' } } });
+    assert.equal(created.structuredContent.data.confirmation_status, 'unconfirmed');
+    const confirmed = await client.callTool({ name: 'leverage_goal_confirm', arguments: { goal_id: created.structuredContent.data.id } });
+    assert.equal(confirmed.isError, false);
+    assert.equal(confirmed.structuredContent.data.confirmation_status, 'confirmed');
+    assert.equal(confirmed.structuredContent.data.confirmation_source, 'explicit_user_action');
+    assert.equal(sshCalls(), 0);
+  });
+});
+
 test('privacy status is read-only and restricted collection requires explicit consent', async () => {
   await withClient(async ({ client, fixture, sshCalls }) => {
     const status = await client.callTool({ name: 'leverage_privacy_status', arguments: {} });
