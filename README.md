@@ -24,8 +24,9 @@ transparent leverage ranking; opportunity-cost alternatives; value-of-informatio
 proactive insight/why traces; experiments; feedback; separately recorded measured
 outcomes; local structured persistence; pluggable provider/domain contracts; MCP,
 CLI and programmatic APIs; and a reproducible earning-power synthetic fixture.
-MobileLAM does not observe apps automatically yet and does not execute recommendations.
-This repository is not production-ready.
+Inferred goals remain inactive until the user explicitly confirms them through the
+separate confirmation action. MobileLAM does not observe apps automatically yet and
+does not execute recommendations. This repository is not production-ready.
 
 ```sh
 git clone https://github.com/XoxRumbleLorexoX/device-bridge.git
