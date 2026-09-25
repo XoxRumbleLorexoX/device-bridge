@@ -55,4 +55,6 @@ The ranking `heuristic_score` is an ordering heuristic, not a probability of tru
 
 Merged MVP PR #12 passed repository CI through head `6a148e8f...` and landed on `main` as merge commit `7d794052...`.
 
-Follow-up PR #13 adds the explicit inferred-goal confirmation transition and its MCP/CLI/tests/evidence. The exact final PR #13 head still requires a fresh full CI pass before merge. DeviceBridge Gate B remains independently open; no native candidate deployment or physical phone acceptance is implied by MobileLAM host CI.
+Follow-up PR #13 adds the explicit inferred-goal confirmation transition and its MCP/CLI/tests/evidence. PR #13 run `36147464290` passed the full repository test suite, `npm run check`, pinned native-source reproducibility verification and verified artifact upload on head `28866ba9...`.
+
+This evidence-only update creates a new final PR head; that exact final head must also pass CI before merge. DeviceBridge Gate B remains independently open; no native candidate deployment or physical phone acceptance is implied by MobileLAM host CI.
