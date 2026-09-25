@@ -5,7 +5,9 @@ export { LeverageService } from './service.mjs';
 export { LeverageStore, defaultLeverageStorePath } from './storage.mjs';
 export { EventSchema, GoalSchema, FeedbackSchema, OutcomeMetricSchema, OutcomeMeasurementSchema, PrivacyPolicySchema, PRIVACY_CLASSES } from './model.mjs';
 export { StaticEventProvider, collectProvider, assertEventProvider } from './providers.mjs';
+export { GitMetadataProvider } from './git_provider.mjs';
 export { estimateCapacityShift, syntheticLeverageFixture } from './pipeline.mjs';
+export { detectRepeatedSequences, detectFriction, extractFrictionVariables, discoverFrictionCandidates } from './friction.mjs';
 export { deriveOutcomeMetrics, detectBottlenecks, attachOpportunityCosts, enrichLeverageMap, toProactiveInsight } from './reasoning.mjs';
 export { assertDomainModule, discoverDomainCandidates, makeDomainCandidate } from './domains.mjs';
 
