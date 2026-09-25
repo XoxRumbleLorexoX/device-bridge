@@ -2,7 +2,7 @@
 
 Date: 2026-09-25
 Branch: `feature/mobilelam-leverage-mvp`
-PR: #12
+PR: #13 (follow-up to merged MVP PR #12)
 
 ## Implemented host-local vertical slice
 
@@ -53,6 +53,6 @@ The ranking `heuristic_score` is an ordering heuristic, not a probability of tru
 
 ## CI state
 
-A prior implementation head (`5e76b932...`) passed repository CI after correcting a synthetic-fixture time-window bug. A later expanded head (`e1f08627...`) passed the Node leverage tests and syntax checks before documentation/domain-governance additions.
+Merged MVP PR #12 passed repository CI through head `6a148e8f...` and landed on `main` as merge commit `7d794052...`.
 
-The exact final PR head after the inferred-goal confirmation transition and this evidence record still requires a fresh full CI pass before merge. DeviceBridge Gate B remains independently open; no native candidate deployment or physical phone acceptance is implied by MobileLAM host CI.
+Follow-up PR #13 adds the explicit inferred-goal confirmation transition and its MCP/CLI/tests/evidence. The exact final PR #13 head still requires a fresh full CI pass before merge. DeviceBridge Gate B remains independently open; no native candidate deployment or physical phone acceptance is implied by MobileLAM host CI.
