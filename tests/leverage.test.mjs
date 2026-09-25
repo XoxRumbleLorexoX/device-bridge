@@ -168,6 +168,31 @@ test('experiment, measured outcome and recommendation feedback remain distinct r
   assert.equal((await store.read()).outcome_measurements.length, 0);
 });
 
+test('inferred goals cannot self-confirm and require an explicit confirmation transition', async () => {
+  const { fixture, service } = await harness();
+  await assert.rejects(() => service.createGoal({ ...fixture.goal, provenance: 'inferred', confirmation_status: 'confirmed' }), /explicit goal-confirmation action/u);
+  const inferred = await service.createGoal({ ...fixture.goal, provenance: 'inferred' });
+  assert.equal(inferred.confirmation_status, 'unconfirmed');
+
+  await service.ingest(fixture.events);
+  let analysis = await service.analyse({ goal_id: inferred.id, time_horizon: '8d', as_of: fixture.as_of });
+  assert.equal(analysis.outcome_metrics.length, 0);
+  assert.equal(analysis.opportunities.some(item => item.goal_ids.includes(inferred.id)), false);
+
+  const confirmed = await service.confirmGoal(inferred.id);
+  assert.equal(confirmed.confirmation_status, 'confirmed');
+  assert.equal(confirmed.confirmation_source, 'explicit_user_action');
+  assert.equal(confirmed.provenance, 'inferred');
+  assert.ok(confirmed.confirmed_at);
+
+  analysis = await service.analyse({ goal_id: inferred.id, time_horizon: '8d', as_of: fixture.as_of });
+  assert.ok(analysis.outcome_metrics.length > 0);
+  assert.ok(analysis.opportunities.some(item => item.goal_ids.includes(inferred.id)));
+
+  const explicit = await service.createGoal({ ...fixture.goal, description: 'Explicit goal remains explicit' });
+  await assert.rejects(() => service.confirmGoal(explicit.id), /Only inferred goals/u);
+});
+
 test('counterfactual capacity arithmetic exposes assumptions instead of claiming outcome gain', () => {
   const scenario = estimateCapacityShift({ hours_per_week: 2.1, reduction_fraction: 0.75, horizon_weeks: 52 });
   assert.equal(scenario.reclaimed_hours, 81.9);

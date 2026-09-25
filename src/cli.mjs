@@ -66,7 +66,15 @@ async function leverageCommand() {
     if (!description || !domain) throw Error('leverage goal requires --description TEXT --domain DOMAIN');
     const objectiveVariables = (option('objectives', '') || '').split(',').map(value => value.trim()).filter(Boolean);
     const priority = Number(option('priority', '0.5'));
-    print(await service.createGoal({ description, domain, objective_variables: objectiveVariables, priority, constraints: [] }));
+    const provenance = option('provenance', 'explicit');
+    if (!['explicit', 'inferred'].includes(provenance)) throw Error('leverage goal --provenance must be explicit or inferred');
+    print(await service.createGoal({ description, domain, objective_variables: objectiveVariables, priority, constraints: [], provenance }));
+    return;
+  }
+  if (subcommand === 'goal-confirm') {
+    const goalId = option('goal');
+    if (!goalId) throw Error('leverage goal-confirm requires --goal UUID');
+    print(await service.confirmGoal(goalId));
     return;
   }
   if (subcommand === 'find') {
@@ -99,7 +107,7 @@ async function leverageCommand() {
     print(await service.deleteHistory({ confirm: option('confirm'), retain_goals: option('retain-goals', 'false') === 'true' }));
     return;
   }
-  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) | experiment --opportunity UUID [--days 14] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
+  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) | experiment --opportunity UUID [--days 14] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
   if (subcommand) process.exitCode = 2;
 }
 

@@ -94,6 +94,19 @@ export class LeverageService {
     });
   }
 
+  async confirmGoal(goalId) {
+    return this.store.transaction(state => {
+      const goal = state.goals.find(item => item.id === goalId);
+      if (!goal) throw new Error('Goal not found.');
+      if (goal.provenance !== 'inferred') throw new Error('Only inferred goals require confirmation.');
+      if (goal.confirmation_status === 'confirmed') return structuredClone(goal);
+      goal.confirmation_status = 'confirmed';
+      goal.confirmed_at = new Date(this.clock()).toISOString();
+      goal.confirmation_source = 'explicit_user_action';
+      return structuredClone(goal);
+    });
+  }
+
   async goals() {
     const state = await this.store.read();
     return structuredClone(state.goals);

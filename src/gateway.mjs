@@ -49,6 +49,12 @@ export const leverageTools = {
     description: 'Create an explicit or clearly marked inferred goal. Inferred goals remain unconfirmed until explicitly confirmed by the user.',
     handler: (service, args) => service.createGoal(args.goal),
   },
+  leverage_goal_confirm: {
+    local: true,
+    schema: z.object({ goal_id: id }).strict(),
+    description: 'Explicitly confirm one previously inferred goal. Creation cannot self-confirm an inferred goal.',
+    handler: (service, args) => service.confirmGoal(args.goal_id),
+  },
   leverage_goals: {
     local: true, readOnly: true, idempotent: true,
     schema: z.object({}).strict(),
