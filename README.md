@@ -25,9 +25,10 @@ competing explanations; transparent leverage ranking; opportunity-cost alternati
 value-of-information; proactive insight/why traces; experiments; feedback; separately
 recorded measured outcomes; local structured persistence; pluggable provider/domain
 contracts; MCP, CLI and programmatic APIs; and a reproducible earning-power synthetic
-fixture. Inferred goals remain inactive until the user explicitly confirms them
-through the separate confirmation action. MobileLAM does not observe apps automatically
-yet and does not execute recommendations. This repository is not production-ready.
+fixture. The first real provider is an explicitly invoked, privacy-minimized local Git
+metadata adapter. Inferred goals remain inactive until the user explicitly confirms
+them through the separate confirmation action. MobileLAM does not continuously observe
+apps and does not execute recommendations. This repository is not production-ready.
 
 ```sh
 git clone https://github.com/XoxRumbleLorexoX/device-bridge.git
@@ -46,12 +47,25 @@ discovery, 2 applications, 12 hours development, 4 hours repeated administration
 a career goal, a repeated-work automation candidate and the missing application →
 interview conversion variable needed to distinguish volume from quality hypotheses.
 
+Real Git metadata can be collected only by an explicit local command such as:
+
+```sh
+node src/cli.mjs leverage collect-git --repo /path/to/repository --label project-a --since 7d
+```
+
+The Git adapter emits commit time and aggregate change counts under a user-chosen
+label. It deliberately excludes commit messages, author/email, file paths, file
+contents, diffs, remotes, branch names and terminal history. It is **not** exposed as
+an MCP collection tool, so model access to stored leverage analysis does not imply
+filesystem-source discovery authority.
+
 Tests require Python 3 and a C compiler in addition to Node. They do not touch the phone. Some tests bind a temporary local Unix socket and
 need permission in sandboxes. No installation, grant, respring or config edit
 happens automatically. Leverage MCP tests explicitly assert that local leverage
 calls do not invoke the SSH/device transport.
 
 - [MobileLAM / Personal Leverage Intelligence](docs/LEVERAGE.md)
+- [Provider privacy and Git metadata](docs/PROVIDERS.md)
 - [Friction and repeated-sequence reasoning](docs/FRICTION.md)
 - [Setup and pairing](docs/SETUP.md)
 - [Architecture and repository comparison](docs/ARCHITECTURE.md)
@@ -77,7 +91,8 @@ require explicit consent, applications/domains/sources/periods can be excluded,
 observation can be paused, retention is bounded, and history deletion requires an
 explicit confirmation string. Friction signals are explicitly not verdicts: a
 repeated transition may be necessary work, and a retry may be intentional iteration.
-See `docs/LEVERAGE.md` and `docs/FRICTION.md` for the exact model and limits.
+See `docs/LEVERAGE.md`, `docs/PROVIDERS.md` and `docs/FRICTION.md` for the exact model
+and limits.
 
 For native source preparation only, clone the selected upstream beside this repository
 and check out the recorded revision (host tests do not require this checkout):
