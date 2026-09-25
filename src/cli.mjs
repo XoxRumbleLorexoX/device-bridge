@@ -8,7 +8,7 @@ import { verifyHostKey } from './pairing.mjs';
 import { loadConfig, SSHTransport } from './transport.mjs';
 import { serve, envelope } from './gateway.mjs';
 import { readinessReport } from './readiness.mjs';
-import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, collectProvider, GitMetadataProvider } from './leverage/index.mjs';
+import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, GitMetadataProvider } from './leverage/index.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -63,12 +63,8 @@ async function leverageCommand() {
     const repositoryPath = option('repo');
     const label = option('label');
     if (!repositoryPath || !label) throw Error('leverage collect-git requires --repo PATH --label SAFE_LABEL');
-    const privacyClass = option('privacy', 'PRIVATE');
-    const since = option('since', '7d');
-    const provider = new GitMetadataProvider({ repositories: [{ label, path: repositoryPath }], privacy_class: privacyClass });
-    const events = await collectProvider(provider, { since });
-    const ingestion = events.length ? await service.ingest(events, { provider_id: provider.id }) : { accepted_count: 0, rejected_count: 0, accepted: [], rejected: [], observation_enabled: (await service.privacy()).observation_enabled };
-    print({ provider: provider.describe(), collected_count: events.length, ingestion });
+    const provider = new GitMetadataProvider({ repositories: [{ label, path: repositoryPath }], privacy_class: option('privacy', 'PRIVATE') });
+    print(await service.collectProvider(provider, { since: option('since', '7d') }));
     return;
   }
   if (subcommand === 'goal') {
@@ -141,8 +137,7 @@ try {
     const scan = execFileSync('ssh-keyscan', ['-T', '5', '-p', port, '-t', keyType, host], { encoding: 'utf8', timeout: 8000, stdio: ['ignore', 'pipe', 'ignore'] });
     const verified = verifyHostKey(scan, { host, port, keyType, fingerprint });
     writeFileSync(output, verified.line + '\n', { flag: 'wx', mode: 0o600 });
-    const actual = verified.fingerprint;
-    print({ status: 'host_key_pinned', fingerprint: actual, next_step: 'Owner must provision distinct restricted SSH and helper credentials, then run status. This is not completed device pairing.' });
+    print({ status: 'host_key_pinned', fingerprint: verified.fingerprint, next_step: 'Owner must provision distinct restricted SSH and helper credentials, then run status. This is not completed device pairing.' });
   } else if (['status', 'capabilities', 'stop'].includes(command)) {
     const config = loadConfig(option('config', '/etc/device-bridge/gateway.json'));
     const transport = new SSHTransport(config);
