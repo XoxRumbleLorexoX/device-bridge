@@ -19,14 +19,15 @@ web page remain gated.
 
 **MobileLAM MVP working now:** canonical privacy-classified event ingestion; semantic
 activity sessions; structured variables/observations/goals/outcome metrics; repeated
-workflow and friction detection; bottleneck hypotheses with competing explanations;
-transparent leverage ranking; opportunity-cost alternatives; value-of-information;
-proactive insight/why traces; experiments; feedback; separately recorded measured
-outcomes; local structured persistence; pluggable provider/domain contracts; MCP,
-CLI and programmatic APIs; and a reproducible earning-power synthetic fixture.
-Inferred goals remain inactive until the user explicitly confirms them through the
-separate confirmation action. MobileLAM does not observe apps automatically yet and
-does not execute recommendations. This repository is not production-ready.
+single-action and multi-step workflow detection; bounded friction signals for rapid
+app transitions, retry loops and repeated retrieval; bottleneck hypotheses with
+competing explanations; transparent leverage ranking; opportunity-cost alternatives;
+value-of-information; proactive insight/why traces; experiments; feedback; separately
+recorded measured outcomes; local structured persistence; pluggable provider/domain
+contracts; MCP, CLI and programmatic APIs; and a reproducible earning-power synthetic
+fixture. Inferred goals remain inactive until the user explicitly confirms them
+through the separate confirmation action. MobileLAM does not observe apps automatically
+yet and does not execute recommendations. This repository is not production-ready.
 
 ```sh
 git clone https://github.com/XoxRumbleLorexoX/device-bridge.git
@@ -51,6 +52,7 @@ happens automatically. Leverage MCP tests explicitly assert that local leverage
 calls do not invoke the SSH/device transport.
 
 - [MobileLAM / Personal Leverage Intelligence](docs/LEVERAGE.md)
+- [Friction and repeated-sequence reasoning](docs/FRICTION.md)
 - [Setup and pairing](docs/SETUP.md)
 - [Architecture and repository comparison](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY.md) and [capability contract](docs/CONTRACT.md)
@@ -73,7 +75,9 @@ MobileLAM is a separate host-local path. Its default store is
 `~/.local/share/device-bridge/leverage-store.json`; sensitive/restricted event classes
 require explicit consent, applications/domains/sources/periods can be excluded,
 observation can be paused, retention is bounded, and history deletion requires an
-explicit confirmation string. See `docs/LEVERAGE.md` for the exact model and limits.
+explicit confirmation string. Friction signals are explicitly not verdicts: a
+repeated transition may be necessary work, and a retry may be intentional iteration.
+See `docs/LEVERAGE.md` and `docs/FRICTION.md` for the exact model and limits.
 
 For native source preparation only, clone the selected upstream beside this repository
 and check out the recorded revision (host tests do not require this checkout):
