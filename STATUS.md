@@ -1,3 +1,34 @@
+# Status — 2026-09-25
+
+**MobileLAM host reasoning advanced; DeviceBridge hardware status did not. Gate B remains open and still requires the owner/device physical acceptance path.**
+
+## MobileLAM / Personal Leverage Intelligence
+
+| Area | State | Evidence / limitation |
+|---|---|---|
+| Canonical events / privacy | MVP implemented | Local ingestion, privacy classes, pause/exclusions/retention and explicit sensitive/restricted consent are tested; automatic real-world providers are not yet enabled. |
+| Activities / variables / goals / outcomes | MVP implemented | Structured activities, variable definitions/observations, explicit goals, separately confirmed inferred goals, outcome metrics and measured outcomes are implemented. |
+| Repetition / friction | Expanded | Same-action repetition plus bounded repeated multi-step sequences, rapid app-transition signals, retry-loop signals and repeated-retrieval signals are implemented. These are signals, not judgments. |
+| Bottlenecks / leverage / why | MVP+ | Competing hypotheses, missing information, transparent ranking dimensions, opportunity-cost alternatives, causal-graph claim types and inspectable why traces are implemented. |
+| Experiments / feedback | MVP implemented | Recommendation feedback and measured outcomes are separate; experiments remain plans requiring user action. |
+| Automation authority | Recommendation-only | Opportunities remain `user_required`; no leverage recommendation automatically invokes DeviceBridge or another consequential action. |
+| Real providers / UI / learned causal effects | Pending | Opt-in provider adapters, provider-level minimization/redaction, generalized nonlinearity detection, experiment evaluation and UI visualization remain future milestones. |
+
+PR #14 implementation-head run `36148511610` passed the full repository test suite,
+`npm run check`, pinned native-source reproducibility verification and artifact upload.
+The sequence/friction milestone adds non-overlapping recurring sequence mining,
+redundant-subsequence suppression, friction variables/bottlenecks/candidates and
+schema-v1 store backfill. Documentation and governance synchronization still require
+an exact final-head CI pass before merge. See `docs/FRICTION.md` and
+`evidence/mobilelam-friction-sequences.md`.
+
+No grant, deployment, pairing acceptance, SpringBoard reload/respring, passcode or
+biometric action, or device UI input was performed by this MobileLAM work.
+
+---
+
+## DeviceBridge status record — 2026-09-24
+
 # Status — 2026-09-24
 
 **Overall goal incomplete. Host/source preparation is ready for the owner-operated physical Gate-B path; no new 0.1.1 native candidate or real-device Gate-B pass exists yet.**
