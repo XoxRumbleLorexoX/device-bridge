@@ -3,6 +3,7 @@ import { canonicalEvent, canonicalGoal, FeedbackSchema, OutcomeMeasurementSchema
 import { normalizePrivacyPolicy, privacyDecision, retentionCutoff } from './privacy.mjs';
 import { LeverageStore } from './storage.mjs';
 import { buildActivities, buildCausalGraph, detectRepetitions, discoverLeverage, extractVariables, rankLeverage, weeklyLeverageReview } from './pipeline.mjs';
+import { detectFriction, detectRepeatedSequences, discoverFrictionCandidates, extractFrictionVariables } from './friction.mjs';
 import { attachOpportunityCosts, deriveOutcomeMetrics, detectBottlenecks, enrichLeverageMap, toProactiveInsight } from './reasoning.mjs';
 import { assertDomainModule, discoverDomainCandidates } from './domains.mjs';
 
@@ -29,6 +30,14 @@ function filterOpportunity(opportunity, { domain, goal_id }) {
   return true;
 }
 
+function mergeVariableModels(primary, secondary) {
+  const definitions = new Map(primary.definitions.map(item => [item.id, item]));
+  const observations = new Map(primary.observations.map(item => [item.variable_id, item]));
+  for (const item of secondary.definitions) definitions.set(item.id, item);
+  for (const item of secondary.observations) observations.set(item.variable_id, item);
+  return { definitions: [...definitions.values()], observations: [...observations.values()] };
+}
+
 export class LeverageService {
   constructor(store = new LeverageStore(), { clock = () => Date.now(), domainModules = [] } = {}) {
     this.store = store;
@@ -51,7 +60,7 @@ export class LeverageService {
   async deleteHistory({ confirm, retain_goals = false } = {}) {
     if (confirm !== 'DELETE_LEVERAGE_HISTORY') throw new Error('History deletion requires confirm=DELETE_LEVERAGE_HISTORY.');
     return this.store.transaction(state => {
-      const collections = ['events', 'activities', 'repetitions', 'variable_definitions', 'observations', 'outcome_metrics', 'bottlenecks', 'opportunities', 'experiments', 'outcome_measurements', 'feedback'];
+      const collections = ['events', 'activities', 'repetitions', 'sequences', 'frictions', 'variable_definitions', 'observations', 'outcome_metrics', 'bottlenecks', 'opportunities', 'experiments', 'outcome_measurements', 'feedback'];
       const counts = Object.fromEntries(collections.map(key => [key, Array.isArray(state[key]) ? state[key].length : 0]));
       for (const key of collections) state[key] = [];
       state.causal_graph = { nodes: [], edges: [] };
@@ -124,14 +133,22 @@ export class LeverageService {
         const timestamp = Date.parse(event.timestamp);
         return timestamp <= asOfMs && timestamp >= cutoff;
       });
+      const asOfIso = new Date(asOfMs).toISOString();
       const baseline = baselineSummary(events);
       const activities = buildActivities(events);
       const repetitions = detectRepetitions(events);
-      const variableModel = extractVariables(events, activities, repetitions, new Date(asOfMs).toISOString());
+      const sequences = detectRepeatedSequences(events);
+      const frictions = detectFriction(events, sequences);
+      const activityVariables = extractVariables(events, activities, repetitions, asOfIso);
+      const frictionVariables = extractFrictionVariables(frictions, sequences, asOfIso);
+      const variableModel = mergeVariableModels(activityVariables, frictionVariables);
       const activeGoals = state.goals.filter(goal => goal.provenance === 'explicit' || goal.confirmation_status === 'confirmed');
       const outcomeMetrics = deriveOutcomeMetrics(activeGoals);
-      const bottlenecks = detectBottlenecks({ goals: activeGoals, observations: variableModel.observations, repetitions });
-      let candidates = discoverLeverage({ goals: state.goals, observations: variableModel.observations, repetitions, events });
+      const bottlenecks = detectBottlenecks({ goals: activeGoals, observations: variableModel.observations, repetitions, frictions, sequences });
+      let candidates = [
+        ...discoverLeverage({ goals: state.goals, observations: variableModel.observations, repetitions, events }),
+        ...discoverFrictionCandidates({ goals: state.goals, frictions, sequences }),
+      ];
       const domainCandidates = await discoverDomainCandidates(this.domainModules, {
         goals: structuredClone(activeGoals),
         events: structuredClone(events),
@@ -139,24 +156,28 @@ export class LeverageService {
         variables: structuredClone(variableModel.definitions),
         observations: structuredClone(variableModel.observations),
         repetitions: structuredClone(repetitions),
+        sequences: structuredClone(sequences),
+        frictions: structuredClone(frictions),
         outcome_metrics: structuredClone(outcomeMetrics),
         bottlenecks: structuredClone(bottlenecks),
-        as_of: new Date(asOfMs).toISOString(),
+        as_of: asOfIso,
       });
       candidates = [...candidates, ...domainCandidates].map(candidate => ({ ...candidate, confidence: Math.round(candidate.confidence * baseline.confidence_multiplier * 1000) / 1000 }));
       let opportunities = rankLeverage(candidates, state.feedback);
       opportunities = attachOpportunityCosts(opportunities, bottlenecks).map(item => ({ ...item, action_authority: 'user_required', action_state: 'recommendation_only' }));
-      const baseGraph = buildCausalGraph(state.goals, variableModel.definitions, opportunities, new Date(asOfMs).toISOString());
+      const baseGraph = buildCausalGraph(state.goals, variableModel.definitions, opportunities, asOfIso);
       const graph = enrichLeverageMap(baseGraph, bottlenecks, opportunities);
       state.activities = activities;
       state.repetitions = repetitions;
+      state.sequences = sequences;
+      state.frictions = frictions;
       state.variable_definitions = variableModel.definitions;
       state.observations = variableModel.observations;
       state.outcome_metrics = outcomeMetrics;
       state.bottlenecks = bottlenecks;
       state.opportunities = opportunities;
       state.causal_graph = graph;
-      state.analysis_meta = { as_of: new Date(asOfMs).toISOString(), time_horizon, baseline, event_count: events.length, domain_modules: this.domainModules.map(module => module.id) };
+      state.analysis_meta = { as_of: asOfIso, time_horizon, baseline, event_count: events.length, repetition_count: repetitions.length, sequence_count: sequences.length, friction_count: frictions.length, domain_modules: this.domainModules.map(module => module.id) };
       const selected = opportunities.filter(item => filterOpportunity(item, { domain, goal_id }));
       const selectedBottleneckIds = new Set(selected.flatMap(item => item.bottleneck_ids ?? []));
       return {
@@ -164,6 +185,9 @@ export class LeverageService {
         goals: structuredClone(state.goals.filter(goal => !goal_id || goal.id === goal_id)),
         outcome_metrics: structuredClone(outcomeMetrics),
         activities: structuredClone(activities),
+        repetitions: structuredClone(repetitions),
+        sequences: structuredClone(sequences),
+        frictions: structuredClone(frictions),
         variables: structuredClone(variableModel.definitions),
         observations: structuredClone(variableModel.observations),
         bottlenecks: structuredClone(bottlenecks.filter(item => !domain || item.domain === domain || selectedBottleneckIds.has(item.id))),
