@@ -35,6 +35,12 @@ async function repositoryFixture() {
   return { root, repository };
 }
 
+const forbiddenValues = ['SECRET', 'Secret Author', 'secret-author@example.invalid', 'private-client-name.txt', 'another-sensitive-filename.txt', 'customer migration', 'unreleased feature'];
+
+function assertNoSensitiveFixtureText(serialized) {
+  for (const forbidden of forbiddenValues) assert.equal(serialized.includes(forbidden), false, `provider leaked ${forbidden}`);
+}
+
 test('Git metadata provider collects bounded aggregate commit metadata without source-sensitive fields', async () => {
   const { repository } = await repositoryFixture();
   const provider = new GitMetadataProvider({ repositories: [{ label: 'work-project', path: repository }] });
@@ -48,9 +54,7 @@ test('Git metadata provider collects bounded aggregate commit metadata without s
   assert.ok(events.some(event => event.context.insertions >= 4));
 
   const serialized = JSON.stringify(events);
-  for (const forbidden of ['SECRET', 'Secret Author', 'secret-author@example.invalid', 'private-client-name.txt', 'another-sensitive-filename.txt', 'customer migration', 'unreleased feature']) {
-    assert.equal(serialized.includes(forbidden), false, `provider leaked ${forbidden}`);
-  }
+  assertNoSensitiveFixtureText(serialized);
   assert.ok(events.every(event => /^git-event:[0-9a-f]{32}$/u.test(event.raw_event_ref)));
   const { stdout } = await git(repository, ['rev-parse', 'HEAD']);
   assert.equal(serialized.includes(stdout.trim()), false);
@@ -88,4 +92,23 @@ test('Git events enter the normal privacy/store pipeline only after explicit col
   const state = await store.read();
   assert.equal(state.events.length, 2);
   assert.ok(state.events.every(event => event.source === 'git-metadata'));
+});
+
+test('collect-git CLI is explicit, persists only minimized events and does not print commit details', async () => {
+  const { root, repository } = await repositoryFixture();
+  const storePath = join(root, 'cli-leverage.json');
+  const { stdout, stderr } = await execFile(process.execPath, [
+    join(process.cwd(), 'src', 'cli.mjs'), 'leverage', 'collect-git',
+    '--repo', repository, '--label', 'cli-project', '--since', '10d', '--store', storePath,
+  ], { encoding: 'utf8', timeout: 15000 });
+  assert.equal(stderr, '');
+  const result = JSON.parse(stdout);
+  assert.equal(result.provider.collection_mode, 'explicit_local_invocation');
+  assert.equal(result.collected_count, 2);
+  assert.equal(result.ingestion.accepted_count, 2);
+  assertNoSensitiveFixtureText(stdout);
+
+  const state = await new LeverageStore(storePath).read();
+  assert.equal(state.events.length, 2);
+  assertNoSensitiveFixtureText(JSON.stringify(state.events));
 });
