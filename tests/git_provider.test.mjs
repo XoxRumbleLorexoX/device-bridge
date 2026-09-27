@@ -66,6 +66,7 @@ test('provider manifest declares collection scope and data it refuses to collect
   const manifest = provider.describe();
   assert.equal(manifest.collection_mode, 'explicit_local_invocation');
   assert.equal(manifest.local_only, true);
+  assert.deepEqual(manifest.declared_privacy_classes, ['PRIVATE']);
   assert.ok(manifest.data_exposed.includes('aggregate insertion count'));
   assert.ok(manifest.data_not_collected.includes('commit message'));
   assert.ok(manifest.data_not_collected.includes('file contents'));
@@ -82,16 +83,51 @@ test('configured repository set is explicit, bounded and fail-closed', async () 
 test('Git events enter the normal privacy/store pipeline only after explicit collection', async () => {
   const { root, repository } = await repositoryFixture();
   const provider = new GitMetadataProvider({ repositories: [{ label: 'project', path: repository }] });
-  const events = await collectProvider(provider, { since: '10d', now: Date.parse('2026-09-25T12:00:00Z') });
   const store = new LeverageStore(join(root, 'leverage-store.json'));
   const service = new LeverageService(store, { clock: () => Date.parse('2026-09-25T12:00:00Z') });
   const before = await store.read();
   assert.equal(before.events.length, 0);
-  const result = await service.ingest(events, { provider_id: provider.id });
-  assert.equal(result.accepted_count, 2);
+  const result = await service.collectProvider(provider, { since: '10d', now: Date.parse('2026-09-25T12:00:00Z') });
+  assert.equal(result.collected_count, 2);
+  assert.equal(result.ingestion.accepted_count, 2);
   const state = await store.read();
   assert.equal(state.events.length, 2);
   assert.ok(state.events.every(event => event.source === 'git-metadata'));
+});
+
+test('observation pause prevents provider execution before repository access', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'device-bridge-git-provider-paused-'));
+  const store = new LeverageStore(join(root, 'store.json'));
+  const service = new LeverageService(store);
+  await service.updatePrivacy({ observation_enabled: false });
+  const missing = join(root, 'this-repository-does-not-exist');
+  const provider = new GitMetadataProvider({ repositories: [{ label: 'paused-project', path: missing }] });
+  const result = await service.collectProvider(provider);
+  assert.equal(result.collected_count, 0);
+  assert.equal(result.ingestion.collection_skipped, true);
+  assert.equal(result.ingestion.skip_reason, 'observation_paused');
+  assert.equal((await store.read()).events.length, 0);
+});
+
+test('source and declared privacy exclusions prevent provider execution before repository access', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'device-bridge-git-provider-policy-'));
+  const missing = join(root, 'this-repository-does-not-exist');
+
+  const sourceStore = new LeverageStore(join(root, 'source-store.json'));
+  const sourceService = new LeverageService(sourceStore);
+  await sourceService.updatePrivacy({ excluded_sources: ['git-metadata'] });
+  const sourceProvider = new GitMetadataProvider({ repositories: [{ label: 'source-blocked', path: missing }] });
+  const sourceResult = await sourceService.collectProvider(sourceProvider);
+  assert.equal(sourceResult.ingestion.collection_skipped, true);
+  assert.equal(sourceResult.ingestion.skip_reason, 'source_excluded');
+
+  const privacyStore = new LeverageStore(join(root, 'privacy-store.json'));
+  const privacyService = new LeverageService(privacyStore);
+  await privacyService.updatePrivacy({ allowed_privacy_classes: ['PUBLIC', 'PERSONAL'] });
+  const privacyProvider = new GitMetadataProvider({ repositories: [{ label: 'privacy-blocked', path: missing }], privacy_class: 'PRIVATE' });
+  const privacyResult = await privacyService.collectProvider(privacyProvider);
+  assert.equal(privacyResult.ingestion.collection_skipped, true);
+  assert.equal(privacyResult.ingestion.skip_reason, 'privacy_class_not_allowed');
 });
 
 test('collect-git CLI is explicit, persists only minimized events and does not print commit details', async () => {
@@ -111,4 +147,22 @@ test('collect-git CLI is explicit, persists only minimized events and does not p
   const state = await new LeverageStore(storePath).read();
   assert.equal(state.events.length, 2);
   assertNoSensitiveFixtureText(JSON.stringify(state.events));
+});
+
+test('collect-git CLI honors observation pause before touching the configured repository path', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'device-bridge-git-provider-cli-paused-'));
+  const storePath = join(root, 'cli-paused.json');
+  const service = new LeverageService(new LeverageStore(storePath));
+  await service.updatePrivacy({ observation_enabled: false });
+  const missing = join(root, 'missing-repository');
+  const { stdout, stderr } = await execFile(process.execPath, [
+    join(process.cwd(), 'src', 'cli.mjs'), 'leverage', 'collect-git',
+    '--repo', missing, '--label', 'paused-cli', '--store', storePath,
+  ], { encoding: 'utf8', timeout: 15000 });
+  assert.equal(stderr, '');
+  const result = JSON.parse(stdout);
+  assert.equal(result.collected_count, 0);
+  assert.equal(result.ingestion.collection_skipped, true);
+  assert.equal(result.ingestion.skip_reason, 'observation_paused');
+  assert.equal((await new LeverageStore(storePath).read()).events.length, 0);
 });
