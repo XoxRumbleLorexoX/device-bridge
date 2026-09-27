@@ -25,10 +25,11 @@ competing explanations; transparent leverage ranking; opportunity-cost alternati
 value-of-information; proactive insight/why traces; experiments; feedback; separately
 recorded measured outcomes; local structured persistence; pluggable provider/domain
 contracts; MCP, CLI and programmatic APIs; and a reproducible earning-power synthetic
-fixture. The first real provider is an explicitly invoked, privacy-minimized local Git
-metadata adapter. Inferred goals remain inactive until the user explicitly confirms
-them through the separate confirmation action. MobileLAM does not continuously observe
-apps and does not execute recommendations. This repository is not production-ready.
+fixture. Inferred goals remain inactive until the user explicitly confirms them
+through the separate confirmation action. MobileLAM now also includes one real,
+explicitly invoked Git metadata provider with pre-collection privacy gating; it does
+not enable automatic/background observation and does not execute recommendations.
+This repository is not production-ready.
 
 ```sh
 git clone https://github.com/XoxRumbleLorexoX/device-bridge.git
@@ -47,26 +48,14 @@ discovery, 2 applications, 12 hours development, 4 hours repeated administration
 a career goal, a repeated-work automation candidate and the missing application →
 interview conversion variable needed to distinguish volume from quality hypotheses.
 
-Real Git metadata can be collected only by an explicit local command such as:
-
-```sh
-node src/cli.mjs leverage collect-git --repo /path/to/repository --label project-a --since 7d
-```
-
-The Git adapter emits commit time and aggregate change counts under a user-chosen
-label. It deliberately excludes commit messages, author/email, file paths, file
-contents, diffs, remotes, branch names and terminal history. It is **not** exposed as
-an MCP collection tool, so model access to stored leverage analysis does not imply
-filesystem-source discovery authority.
-
 Tests require Python 3 and a C compiler in addition to Node. They do not touch the phone. Some tests bind a temporary local Unix socket and
 need permission in sandboxes. No installation, grant, respring or config edit
 happens automatically. Leverage MCP tests explicitly assert that local leverage
 calls do not invoke the SSH/device transport.
 
 - [MobileLAM / Personal Leverage Intelligence](docs/LEVERAGE.md)
-- [Provider privacy and Git metadata](docs/PROVIDERS.md)
 - [Friction and repeated-sequence reasoning](docs/FRICTION.md)
+- [Opt-in event providers and Git metadata boundary](docs/PROVIDERS.md)
 - [Setup and pairing](docs/SETUP.md)
 - [Architecture and repository comparison](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY.md) and [capability contract](docs/CONTRACT.md)
@@ -89,17 +78,20 @@ MobileLAM is a separate host-local path. Its default store is
 `~/.local/share/device-bridge/leverage-store.json`; sensitive/restricted event classes
 require explicit consent, applications/domains/sources/periods can be excluded,
 observation can be paused, retention is bounded, and history deletion requires an
-explicit confirmation string. Friction signals are explicitly not verdicts: a
-repeated transition may be necessary work, and a retry may be intentional iteration.
-See `docs/LEVERAGE.md`, `docs/PROVIDERS.md` and `docs/FRICTION.md` for the exact model
-and limits.
+explicit confirmation string. Real provider collection additionally honors pause,
+source exclusion and declared privacy-class policy before touching the configured
+source. Friction signals are explicitly not verdicts: a repeated transition may be
+necessary work, and a retry may be intentional iteration. See `docs/LEVERAGE.md`,
+`docs/FRICTION.md` and `docs/PROVIDERS.md` for the exact model and limits.
 
 For native source preparation only, clone the selected upstream beside this repository
 and check out the recorded revision (host tests do not require this checkout):
 
 ```sh
 git clone https://github.com/witchan/ios-mcp.git ../ios-mcp
-git -C ../ios-mcp checkout --detach 38cafd5fbda7a4dcb3821b94cbb3523fc905c0b2
+cd ../ios-mcp
+git checkout --detach 38cafd5fbda7a4dcb3821b94cbb3523fc905c0b2
+cd ../device-bridge
 python3 scripts/prepare_executor.py --output build/executor-reviewed
 ```
 
