@@ -7,6 +7,7 @@ import { buildActivities, buildCausalGraph, detectRepetitions, discoverLeverage,
 import { detectFriction, detectRepeatedSequences, discoverFrictionCandidates, extractFrictionVariables } from './friction.mjs';
 import { attachOpportunityCosts, deriveOutcomeMetrics, detectBottlenecks, enrichLeverageMap, toProactiveInsight } from './reasoning.mjs';
 import { assertDomainModule, discoverDomainCandidates } from './domains.mjs';
+import { evaluateExperimentMeasurements } from './experiments.mjs';
 
 function parseHorizon(value) {
   if (value === 'all') return Infinity;
@@ -45,6 +46,23 @@ function emptyIngestion(observationEnabled, reason) {
 
 function lowerSet(values) {
   return new Set((values ?? []).filter(value => typeof value === 'string').map(value => value.toLowerCase()));
+}
+
+function resolveExperimentDirection(state, experiment, metricId, requested = 'auto') {
+  if (!['auto', 'increase', 'decrease', 'maintain', 'unspecified'].includes(requested))
+    throw new Error('direction must be auto, increase, decrease, maintain or unspecified.');
+  if (requested !== 'auto') return { direction: requested, provenance: 'evaluation_request' };
+
+  const metric = state.outcome_metrics.find(item => item.id === metricId && item.direction && item.direction !== 'unspecified');
+  if (metric) return { direction: metric.direction, provenance: 'active_goal_outcome_metric' };
+
+  const opportunity = state.opportunities.find(item => item.id === experiment.opportunity_id);
+  if (opportunity?.lever?.variable === metricId && typeof opportunity.lever.current_value === 'number' && typeof opportunity.lever.proposed_value === 'number') {
+    if (opportunity.lever.proposed_value > opportunity.lever.current_value) return { direction: 'increase', provenance: 'intervention_numeric_direction' };
+    if (opportunity.lever.proposed_value < opportunity.lever.current_value) return { direction: 'decrease', provenance: 'intervention_numeric_direction' };
+    return { direction: 'maintain', provenance: 'intervention_numeric_direction' };
+  }
+  return { direction: 'unspecified', provenance: 'unresolved' };
 }
 
 export class LeverageService {
@@ -304,6 +322,32 @@ export class LeverageService {
       state.experiments.push(experiment);
       return structuredClone(experiment);
     });
+  }
+
+  async evaluateExperiment({ experiment_id, metric_id, direction = 'auto', minimum_meaningful_change = 0 } = {}) {
+    const state = await this.store.read();
+    const experiment = state.experiments.find(item => item.id === experiment_id);
+    if (!experiment) throw new Error('Experiment not found.');
+    const resolved = resolveExperimentDirection(state, experiment, metric_id, direction);
+    const evaluation = evaluateExperimentMeasurements({
+      experiment,
+      measurements: state.outcome_measurements,
+      metric_id,
+      direction: resolved.direction,
+      minimum_meaningful_change,
+      evaluated_at: new Date(this.clock()).toISOString(),
+    });
+    return {
+      ...evaluation,
+      direction_provenance: resolved.provenance,
+      experiment: {
+        id: experiment.id,
+        status: experiment.status,
+        hypothesis: experiment.hypothesis,
+        intervention: experiment.intervention,
+      },
+      read_only: true,
+    };
   }
 
   async review() {
