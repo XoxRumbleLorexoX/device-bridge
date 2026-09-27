@@ -71,6 +71,7 @@ export class GitMetadataProvider {
       collection_mode: 'explicit_local_invocation',
       local_only: true,
       declared_privacy_classes: [this.privacy_class],
+      declared_applications: ['git'],
       data_exposed: ['repository label', 'commit timestamp', 'aggregate files-changed count', 'aggregate insertion count', 'aggregate deletion count', 'opaque event reference'],
       data_not_collected: ['commit message', 'author name', 'author email', 'file path', 'file contents', 'diff', 'remote URL', 'branch name', 'terminal history'],
       interpretation: 'Git change-volume metadata is behavioral evidence, not a productivity or code-quality score.',
