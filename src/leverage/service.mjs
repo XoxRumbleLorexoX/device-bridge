@@ -43,6 +43,10 @@ function emptyIngestion(observationEnabled, reason) {
   return { accepted_count: 0, rejected_count: 0, accepted: [], rejected: [], observation_enabled: observationEnabled, collection_skipped: true, skip_reason: reason };
 }
 
+function lowerSet(values) {
+  return new Set((values ?? []).filter(value => typeof value === 'string').map(value => value.toLowerCase()));
+}
+
 export class LeverageService {
   constructor(store = new LeverageStore(), { clock = () => Date.now(), domainModules = [] } = {}) {
     this.store = store;
@@ -67,10 +71,19 @@ export class LeverageService {
     const policy = normalizePrivacyPolicy(state.privacy);
     const manifest = typeof provider?.describe === 'function' ? provider.describe() : { id: provider?.id ?? 'unknown', collection_mode: 'unspecified' };
     if (!policy.observation_enabled) return { provider: manifest, collected_count: 0, ingestion: emptyIngestion(false, 'observation_paused') };
-    if (policy.excluded_sources.includes(provider?.id)) return { provider: manifest, collected_count: 0, ingestion: emptyIngestion(true, 'source_excluded') };
-    const declared = Array.isArray(manifest.declared_privacy_classes) ? manifest.declared_privacy_classes : [];
-    if (declared.length && !declared.some(value => policy.allowed_privacy_classes.includes(value)))
+
+    const providerId = typeof provider?.id === 'string' ? provider.id.toLowerCase() : '';
+    if (providerId && lowerSet(policy.excluded_sources).has(providerId))
+      return { provider: manifest, collected_count: 0, ingestion: emptyIngestion(true, 'source_excluded') };
+
+    const declaredPrivacyClasses = Array.isArray(manifest.declared_privacy_classes) ? manifest.declared_privacy_classes : [];
+    if (declaredPrivacyClasses.length && !declaredPrivacyClasses.some(value => policy.allowed_privacy_classes.includes(value)))
       return { provider: manifest, collected_count: 0, ingestion: emptyIngestion(true, 'privacy_class_not_allowed') };
+
+    const declaredApplications = Array.isArray(manifest.declared_applications) ? manifest.declared_applications.filter(value => typeof value === 'string' && value) : [];
+    const excludedApplications = lowerSet(policy.excluded_applications);
+    if (declaredApplications.length && declaredApplications.every(value => excludedApplications.has(value.toLowerCase())))
+      return { provider: manifest, collected_count: 0, ingestion: emptyIngestion(true, 'application_excluded') };
 
     const events = await collectEventsFromProvider(provider, context);
     const ingestion = events.length ? await this.ingest(events, { provider_id: provider.id }) : { accepted_count: 0, rejected_count: 0, accepted: [], rejected: [], observation_enabled: true };

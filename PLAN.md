@@ -272,3 +272,43 @@ Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to
   nonlinearity discovery and experiment evaluation remain parallel reasoning milestones.
 - DeviceBridge Gate B remains independent and open; this host-local provider work does
   not change native deployment, grants, SSH authority or physical-device acceptance.
+
+## MobileLAM opt-in calendar timing provider milestone — 2026-09-28
+
+- Added `CalendarMetadataProvider` for explicitly selected local `.ics` files. The
+  provider emits only schedule timing/duration, all-day and busy/free metadata, a
+  safe user label and an opaque event reference; it never searches for calendars.
+- Calendar text is deliberately excluded from canonical events: title/summary,
+  description/notes, location, attendees, organizer, conference URL, alarms,
+  attachments and raw UID are not emitted. A UID may only contribute transiently to
+  an opaque hash used as the event reference.
+- Added `bridge leverage collect-calendar --file PATH.ics --label SAFE_LABEL ...`
+  and a programmatic export. As with Git, there is deliberately no calendar/file
+  source-collection MCP tool.
+- Time semantics fail closed rather than guess. The first provider accepts UTC `Z`
+  timed values and all-day DATE values; floating/local and TZID-based timed values
+  are rejected, and RRULE recurrence must be materialized by the caller. All-day
+  UTC-midnight timestamps are explicitly marked placeholders, not hour-of-day facts.
+- Extended the shared pre-collection gate with provider-declared synthetic
+  applications. A provider can now be stopped before source access when all declared
+  applications are excluded. Calendar declares `calendar`; Git declares `git`.
+- Added source hardening: explicitly configured regular files only, `O_NOFOLLOW`
+  symlink refusal where supported, 4 MiB input limit, bounded event output and no
+  discovery fallback after access/parse failure.
+- Regression tests seed an `.ics` file with sensitive summaries, descriptions,
+  locations, attendees, organizer identity, meeting URL, alarm text and raw UIDs and
+  prove none appear in events, CLI output or persisted state. They also cover
+  UTC/all-day extraction, cancelled-event suppression, activity/variable integration,
+  ambiguous/recurring rejection, symlink refusal, CLI use and pre-source pause/
+  source/privacy/application exclusions using nonexistent file paths.
+- PR #16 implementation head `e6198846ccbe507e015670878e7afe009d5fb894`
+  passed CI run `36355508190`: full repository tests/checks, pinned native-source
+  reproducibility verification and verified artifact upload. Documentation and
+  governance synchronization still require one exact final-head CI pass before merge.
+- Next leverage work can now shift from adding sources to extracting stronger evidence
+  from the structured data: generalized threshold/nonlinearity discovery and stronger
+  experiment-result evaluation are the next reasoning milestones. Broader providers
+  should remain metadata-first; health, finance and message content still require
+  separate consent/minimization/threat-model design.
+- DeviceBridge Gate B remains independent and open; this provider work changes no
+  native deployment, SSH authority, grants or physical-device acceptance state.
