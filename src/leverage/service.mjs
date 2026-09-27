@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { canonicalEvent, canonicalGoal, FeedbackSchema, OutcomeMeasurementSchema } from './model.mjs';
 import { normalizePrivacyPolicy, privacyDecision, retentionCutoff } from './privacy.mjs';
+import { collectProvider as collectEventsFromProvider } from './providers.mjs';
 import { LeverageStore } from './storage.mjs';
 import { buildActivities, buildCausalGraph, detectRepetitions, discoverLeverage, extractVariables, rankLeverage, weeklyLeverageReview } from './pipeline.mjs';
 import { detectFriction, detectRepeatedSequences, discoverFrictionCandidates, extractFrictionVariables } from './friction.mjs';
@@ -38,6 +39,10 @@ function mergeVariableModels(primary, secondary) {
   return { definitions: [...definitions.values()], observations: [...observations.values()] };
 }
 
+function emptyIngestion(observationEnabled, reason) {
+  return { accepted_count: 0, rejected_count: 0, accepted: [], rejected: [], observation_enabled: observationEnabled, collection_skipped: true, skip_reason: reason };
+}
+
 export class LeverageService {
   constructor(store = new LeverageStore(), { clock = () => Date.now(), domainModules = [] } = {}) {
     this.store = store;
@@ -55,6 +60,21 @@ export class LeverageService {
       state.privacy = normalizePrivacyPolicy({ ...state.privacy, ...patch });
       return structuredClone(state.privacy);
     });
+  }
+
+  async collectProvider(provider, context = {}) {
+    const state = await this.store.read();
+    const policy = normalizePrivacyPolicy(state.privacy);
+    const manifest = typeof provider?.describe === 'function' ? provider.describe() : { id: provider?.id ?? 'unknown', collection_mode: 'unspecified' };
+    if (!policy.observation_enabled) return { provider: manifest, collected_count: 0, ingestion: emptyIngestion(false, 'observation_paused') };
+    if (policy.excluded_sources.includes(provider?.id)) return { provider: manifest, collected_count: 0, ingestion: emptyIngestion(true, 'source_excluded') };
+    const declared = Array.isArray(manifest.declared_privacy_classes) ? manifest.declared_privacy_classes : [];
+    if (declared.length && !declared.some(value => policy.allowed_privacy_classes.includes(value)))
+      return { provider: manifest, collected_count: 0, ingestion: emptyIngestion(true, 'privacy_class_not_allowed') };
+
+    const events = await collectEventsFromProvider(provider, context);
+    const ingestion = events.length ? await this.ingest(events, { provider_id: provider.id }) : { accepted_count: 0, rejected_count: 0, accepted: [], rejected: [], observation_enabled: true };
+    return { provider: manifest, collected_count: events.length, ingestion };
   }
 
   async deleteHistory({ confirm, retain_goals = false } = {}) {

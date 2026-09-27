@@ -237,3 +237,38 @@ Independent helper setup prepared/preflighted; owner runs reviewed sudo setup to
 - Next leverage milestones: opt-in real providers, provider-level minimization/redaction,
   generalized threshold/nonlinearity discovery, experiment result evaluation and a
   UI leverage map. DeviceBridge Gate B remains a separate owner/device acceptance gate.
+
+## MobileLAM opt-in Git provider milestone — 2026-09-28
+
+- Added the first real MobileLAM provider: `GitMetadataProvider`, configured only with
+  explicitly supplied repository paths and safe user-chosen labels. It never crawls
+  the filesystem for repositories.
+- Collection is local and deliberately metadata-only: non-merge commit timestamp,
+  aggregate files-changed/insertions/deletions counts and an opaque hashed event
+  reference. Commit messages, author identity/email, file paths, file/source content,
+  diffs, branch names, remote URLs, terminal history and raw commit SHA are excluded.
+- Aggregate change counts are tagged `change_volume_metadata_not_productivity`; they
+  are behavioral change-volume evidence, not a code-quality or productivity score.
+- Added `bridge leverage collect-git --repo PATH --label SAFE_LABEL ...` plus the
+  programmatic provider export. There is deliberately no Git/repository collection
+  MCP tool, so analysis authority cannot silently become host-filesystem discovery.
+- Hardened provider execution behind `LeverageService.collectProvider()`. Observation
+  pause, excluded provider source and disallowed declared privacy class now stop
+  collection before the provider resolves repository paths or executes `git log`.
+  Returned events still pass through the normal event-level privacy/persistence gate.
+- Regression tests create a real temporary Git repository containing sensitive
+  commit messages, filenames, author name and email, then assert those values never
+  appear in canonical events, CLI output or persisted events. Additional tests point
+  at nonexistent repositories and prove pause/source/privacy exclusions skip before
+  filesystem access. MCP-boundary tests assert no Git collection capability exists.
+- Privacy-hardening head `b63a0aa9c409c7d20bde3ab910de24638059ee7a`
+  passed CI run `36354609548`: full repository tests/checks, pinned native-source
+  reproducibility verification and verified artifact upload. Documentation and
+  governance commits after that head require one fresh exact-head CI pass before merge.
+- Next provider candidates should remain metadata-first and source-explicit. Calendar
+  timing/categories is a plausible next low-content source; health, finance, message
+  content and similarly sensitive sources require additional source-specific consent,
+  minimization and threat-model work before implementation. Generalized threshold/
+  nonlinearity discovery and experiment evaluation remain parallel reasoning milestones.
+- DeviceBridge Gate B remains independent and open; this host-local provider work does
+  not change native deployment, grants, SSH authority or physical-device acceptance.

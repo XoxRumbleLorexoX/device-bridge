@@ -26,8 +26,10 @@ value-of-information; proactive insight/why traces; experiments; feedback; separ
 recorded measured outcomes; local structured persistence; pluggable provider/domain
 contracts; MCP, CLI and programmatic APIs; and a reproducible earning-power synthetic
 fixture. Inferred goals remain inactive until the user explicitly confirms them
-through the separate confirmation action. MobileLAM does not observe apps automatically
-yet and does not execute recommendations. This repository is not production-ready.
+through the separate confirmation action. MobileLAM now also includes one real,
+explicitly invoked Git metadata provider with pre-collection privacy gating; it does
+not enable automatic/background observation and does not execute recommendations.
+This repository is not production-ready.
 
 ```sh
 git clone https://github.com/XoxRumbleLorexoX/device-bridge.git
@@ -53,6 +55,7 @@ calls do not invoke the SSH/device transport.
 
 - [MobileLAM / Personal Leverage Intelligence](docs/LEVERAGE.md)
 - [Friction and repeated-sequence reasoning](docs/FRICTION.md)
+- [Opt-in event providers and Git metadata boundary](docs/PROVIDERS.md)
 - [Setup and pairing](docs/SETUP.md)
 - [Architecture and repository comparison](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY.md) and [capability contract](docs/CONTRACT.md)
@@ -75,16 +78,20 @@ MobileLAM is a separate host-local path. Its default store is
 `~/.local/share/device-bridge/leverage-store.json`; sensitive/restricted event classes
 require explicit consent, applications/domains/sources/periods can be excluded,
 observation can be paused, retention is bounded, and history deletion requires an
-explicit confirmation string. Friction signals are explicitly not verdicts: a
-repeated transition may be necessary work, and a retry may be intentional iteration.
-See `docs/LEVERAGE.md` and `docs/FRICTION.md` for the exact model and limits.
+explicit confirmation string. Real provider collection additionally honors pause,
+source exclusion and declared privacy-class policy before touching the configured
+source. Friction signals are explicitly not verdicts: a repeated transition may be
+necessary work, and a retry may be intentional iteration. See `docs/LEVERAGE.md`,
+`docs/FRICTION.md` and `docs/PROVIDERS.md` for the exact model and limits.
 
 For native source preparation only, clone the selected upstream beside this repository
 and check out the recorded revision (host tests do not require this checkout):
 
 ```sh
 git clone https://github.com/witchan/ios-mcp.git ../ios-mcp
-git -C ../ios-mcp checkout --detach 38cafd5fbda7a4dcb3821b94cbb3523fc905c0b2
+cd ../ios-mcp
+git checkout --detach 38cafd5fbda7a4dcb3821b94cbb3523fc905c0b2
+cd ../device-bridge
 python3 scripts/prepare_executor.py --output build/executor-reviewed
 ```
 

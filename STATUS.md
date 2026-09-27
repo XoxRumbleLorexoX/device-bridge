@@ -1,26 +1,30 @@
-# Status — 2026-09-25
+# Status — 2026-09-28
 
-**MobileLAM host reasoning advanced; DeviceBridge hardware status did not. Gate B remains open and still requires the owner/device physical acceptance path.**
+**MobileLAM now has its first real opt-in provider; DeviceBridge hardware status did not change. Gate B remains open and still requires the owner/device physical acceptance path.**
 
 ## MobileLAM / Personal Leverage Intelligence
 
 | Area | State | Evidence / limitation |
 |---|---|---|
-| Canonical events / privacy | MVP implemented | Local ingestion, privacy classes, pause/exclusions/retention and explicit sensitive/restricted consent are tested; automatic real-world providers are not yet enabled. |
+| Canonical events / privacy | Expanded | Local ingestion, privacy classes, pause/exclusions/retention and explicit sensitive/restricted consent are tested. Real provider execution now has a pre-collection privacy gate so pause/source/privacy exclusions can stop source access before collection. |
 | Activities / variables / goals / outcomes | MVP implemented | Structured activities, variable definitions/observations, explicit goals, separately confirmed inferred goals, outcome metrics and measured outcomes are implemented. |
 | Repetition / friction | Expanded | Same-action repetition plus bounded repeated multi-step sequences, rapid app-transition signals, retry-loop signals and repeated-retrieval signals are implemented. These are signals, not judgments. |
 | Bottlenecks / leverage / why | MVP+ | Competing hypotheses, missing information, transparent ranking dimensions, opportunity-cost alternatives, causal-graph claim types and inspectable why traces are implemented. |
 | Experiments / feedback | MVP implemented | Recommendation feedback and measured outcomes are separate; experiments remain plans requiring user action. |
 | Automation authority | Recommendation-only | Opportunities remain `user_required`; no leverage recommendation automatically invokes DeviceBridge or another consequential action. |
-| Real providers / UI / learned causal effects | Pending | Opt-in provider adapters, provider-level minimization/redaction, generalized nonlinearity detection, experiment evaluation and UI visualization remain future milestones. |
+| Real providers | First provider implemented | `GitMetadataProvider` collects only explicitly selected local repository metadata. It is CLI/programmatic only, not an MCP source-discovery tool; commit messages, author/email, paths, source, diffs, remotes and branch names are deliberately excluded. Automatic/background observation is still not enabled. |
+| UI / learned causal effects / broader providers | Pending | Calendar-style metadata providers, generalized nonlinearity detection, stronger experiment evaluation and UI visualization remain future milestones. High-sensitivity health/finance/message sources require additional consent/minimization design. |
 
-PR #14 implementation-head run `36148511610` passed the full repository test suite,
-`npm run check`, pinned native-source reproducibility verification and artifact upload.
-The sequence/friction milestone adds non-overlapping recurring sequence mining,
-redundant-subsequence suppression, friction variables/bottlenecks/candidates and
-schema-v1 store backfill. Documentation and governance synchronization still require
-an exact final-head CI pass before merge. See `docs/FRICTION.md` and
-`evidence/mobilelam-friction-sequences.md`.
+PR #15 privacy-hardening head `b63a0aa9c409c7d20bde3ab910de24638059ee7a`
+passed CI run `36354609548`: full repository tests, `npm run check`, pinned
+native-source reproducibility verification and verified artifact upload. The test
+suite includes a real temporary Git repository seeded with sensitive commit messages,
+filenames, author identity and email and asserts that none enter canonical events,
+CLI output or persisted leverage history. Additional tests use nonexistent repository
+paths to prove observation pause, source exclusion and disallowed privacy class skip
+collection before filesystem/Git access. Documentation/PLAN/STATUS synchronization
+after that head requires one exact final-head CI pass before merge. See
+`docs/PROVIDERS.md` and `evidence/mobilelam-git-provider.md`.
 
 No grant, deployment, pairing acceptance, SpringBoard reload/respring, passcode or
 biometric action, or device UI input was performed by this MobileLAM work.

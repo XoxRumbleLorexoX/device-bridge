@@ -8,7 +8,7 @@ import { verifyHostKey } from './pairing.mjs';
 import { loadConfig, SSHTransport } from './transport.mjs';
 import { serve, envelope } from './gateway.mjs';
 import { readinessReport } from './readiness.mjs';
-import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture } from './leverage/index.mjs';
+import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, GitMetadataProvider } from './leverage/index.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -44,8 +44,6 @@ async function leverageCommand() {
       const service = new LeverageService(new LeverageStore(join(directory, 'store.json')), { clock: () => Date.parse(fixture.as_of) });
       await service.ingest(fixture.events, { provider_id: 'synthetic' });
       const goal = await service.createGoal(fixture.goal);
-      // Fixture snapshot is the day after its seven observed calendar days, so an 8d
-      // rolling query contains that complete seven-day observation period.
       const analysis = await service.analyse({ goal_id: goal.id, time_horizon: '8d', as_of: fixture.as_of });
       const review = await service.review();
       print({ synthetic: true, persisted: false, goal, analysis: analysis.analysis, outcome_metrics: analysis.outcome_metrics, variables: analysis.observations.map(({ variable_id, value, confidence }) => ({ variable_id, value, confidence })), bottlenecks: analysis.bottlenecks, opportunities: analysis.opportunities, insights: analysis.insights, value_of_information: analysis.value_of_information, weekly_review: review.text });
@@ -59,6 +57,14 @@ async function leverageCommand() {
     const parsed = JSON.parse(readFileSync(file, 'utf8'));
     const events = Array.isArray(parsed) ? parsed : parsed.events;
     print(await service.ingest(events, { provider_id: option('provider', 'manual-file') }));
+    return;
+  }
+  if (subcommand === 'collect-git') {
+    const repositoryPath = option('repo');
+    const label = option('label');
+    if (!repositoryPath || !label) throw Error('leverage collect-git requires --repo PATH --label SAFE_LABEL');
+    const provider = new GitMetadataProvider({ repositories: [{ label, path: repositoryPath }], privacy_class: option('privacy', 'PRIVATE') });
+    print(await service.collectProvider(provider, { since: option('since', '7d') }));
     return;
   }
   if (subcommand === 'goal') {
@@ -107,7 +113,7 @@ async function leverageCommand() {
     print(await service.deleteHistory({ confirm: option('confirm'), retain_goals: option('retain-goals', 'false') === 'true' }));
     return;
   }
-  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) | experiment --opportunity UUID [--days 14] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
+  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) | experiment --opportunity UUID [--days 14] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
   if (subcommand) process.exitCode = 2;
 }
 
@@ -131,8 +137,7 @@ try {
     const scan = execFileSync('ssh-keyscan', ['-T', '5', '-p', port, '-t', keyType, host], { encoding: 'utf8', timeout: 8000, stdio: ['ignore', 'pipe', 'ignore'] });
     const verified = verifyHostKey(scan, { host, port, keyType, fingerprint });
     writeFileSync(output, verified.line + '\n', { flag: 'wx', mode: 0o600 });
-    const actual = verified.fingerprint;
-    print({ status: 'host_key_pinned', fingerprint: actual, next_step: 'Owner must provision distinct restricted SSH and helper credentials, then run status. This is not completed device pairing.' });
+    print({ status: 'host_key_pinned', fingerprint: verified.fingerprint, next_step: 'Owner must provision distinct restricted SSH and helper credentials, then run status. This is not completed device pairing.' });
   } else if (['status', 'capabilities', 'stop'].includes(command)) {
     const config = loadConfig(option('config', '/etc/device-bridge/gateway.json'));
     const transport = new SSHTransport(config);
