@@ -26,10 +26,11 @@ value-of-information; proactive insight/why traces; experiments; feedback; separ
 recorded measured outcomes; local structured persistence; pluggable provider/domain
 contracts; MCP, CLI and programmatic APIs; and a reproducible earning-power synthetic
 fixture. Inferred goals remain inactive until the user explicitly confirms them
-through the separate confirmation action. MobileLAM now also includes one real,
-explicitly invoked Git metadata provider with pre-collection privacy gating; it does
-not enable automatic/background observation and does not execute recommendations.
-This repository is not production-ready.
+through the separate confirmation action. MobileLAM now also includes two real,
+explicitly invoked metadata providers: minimized Git change metadata and minimized
+`.ics` calendar timing metadata. Both use pre-collection privacy gating; neither
+enables automatic/background observation, provider source discovery through MCP, or
+automatic recommendation execution. This repository is not production-ready.
 
 ```sh
 git clone https://github.com/XoxRumbleLorexoX/device-bridge.git
@@ -55,7 +56,7 @@ calls do not invoke the SSH/device transport.
 
 - [MobileLAM / Personal Leverage Intelligence](docs/LEVERAGE.md)
 - [Friction and repeated-sequence reasoning](docs/FRICTION.md)
-- [Opt-in event providers and Git metadata boundary](docs/PROVIDERS.md)
+- [Opt-in event providers and metadata boundaries](docs/PROVIDERS.md)
 - [Setup and pairing](docs/SETUP.md)
 - [Architecture and repository comparison](docs/ARCHITECTURE.md)
 - [Security boundaries](docs/SECURITY.md) and [capability contract](docs/CONTRACT.md)
@@ -79,10 +80,14 @@ MobileLAM is a separate host-local path. Its default store is
 require explicit consent, applications/domains/sources/periods can be excluded,
 observation can be paused, retention is bounded, and history deletion requires an
 explicit confirmation string. Real provider collection additionally honors pause,
-source exclusion and declared privacy-class policy before touching the configured
-source. Friction signals are explicitly not verdicts: a repeated transition may be
-necessary work, and a retry may be intentional iteration. See `docs/LEVERAGE.md`,
-`docs/FRICTION.md` and `docs/PROVIDERS.md` for the exact model and limits.
+source exclusion, declared privacy-class policy and fully excluded declared
+applications before touching the configured source. Git collection deliberately
+omits repository content/identity fields. Calendar collection deliberately omits
+titles, notes, locations, people and meeting links and currently accepts only UTC or
+all-day date semantics; ambiguous timezone/recurrence forms fail closed. Friction
+signals are explicitly not verdicts: a repeated transition may be necessary work,
+and a retry may be intentional iteration. See `docs/LEVERAGE.md`, `docs/FRICTION.md`
+and `docs/PROVIDERS.md` for the exact model and limits.
 
 For native source preparation only, clone the selected upstream beside this repository
 and check out the recorded revision (host tests do not require this checkout):
