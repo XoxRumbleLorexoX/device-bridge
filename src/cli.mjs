@@ -8,7 +8,7 @@ import { verifyHostKey } from './pairing.mjs';
 import { loadConfig, SSHTransport } from './transport.mjs';
 import { serve, envelope } from './gateway.mjs';
 import { readinessReport } from './readiness.mjs';
-import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, GitMetadataProvider } from './leverage/index.mjs';
+import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, GitMetadataProvider, CalendarMetadataProvider } from './leverage/index.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -67,6 +67,14 @@ async function leverageCommand() {
     print(await service.collectProvider(provider, { since: option('since', '7d') }));
     return;
   }
+  if (subcommand === 'collect-calendar') {
+    const calendarPath = option('file');
+    const label = option('label');
+    if (!calendarPath || !label) throw Error('leverage collect-calendar requires --file PATH.ics --label SAFE_LABEL');
+    const provider = new CalendarMetadataProvider({ calendars: [{ label, path: calendarPath }], privacy_class: option('privacy', 'PRIVATE') });
+    print(await service.collectProvider(provider, { since: option('since', '30d') }));
+    return;
+  }
   if (subcommand === 'goal') {
     const description = option('description'); const domain = option('domain');
     if (!description || !domain) throw Error('leverage goal requires --description TEXT --domain DOMAIN');
@@ -113,7 +121,7 @@ async function leverageCommand() {
     print(await service.deleteHistory({ confirm: option('confirm'), retain_goals: option('retain-goals', 'false') === 'true' }));
     return;
   }
-  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) | experiment --opportunity UUID [--days 14] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
+  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | collect-calendar --file PATH.ics --label SAFE_LABEL [--since 30d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) | experiment --opportunity UUID [--days 14] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
   if (subcommand) process.exitCode = 2;
 }
 
