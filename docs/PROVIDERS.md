@@ -15,7 +15,7 @@ class EventProvider {
 }
 ```
 
-`collectProvider()` validates the provider and canonicalizes returned events before they enter the normal privacy/store pipeline.
+`collectProvider()` validates the provider and canonicalizes returned events. Real collection through `LeverageService.collectProvider()` adds a privacy gate **before** the provider runs and then sends any returned events through the normal event-level privacy/store gate.
 
 Real providers should also expose a human-readable `describe()` manifest containing at least:
 
@@ -26,7 +26,21 @@ Real providers should also expose a human-readable `describe()` manifest contain
 - nearby data explicitly not collected;
 - important interpretation limitations.
 
-Collection and storage are separate steps. Producing provider events does not itself persist them; `LeverageService.ingest()` still applies the current observation policy and retention rules.
+### Two-stage privacy gate
+
+Collection and storage are separate steps, but a paused/excluded provider should not be allowed to inspect its source just because later persistence would reject the result.
+
+`LeverageService.collectProvider()` therefore checks the current policy before `provider.collect()` runs. Collection is skipped when:
+
+- observation is paused;
+- the provider source ID is excluded;
+- none of the provider's declared privacy classes are currently allowed.
+
+The returned result is marked `collection_skipped` with a reason such as `observation_paused`, `source_excluded`, or `privacy_class_not_allowed`.
+
+If the preflight passes, provider events are collected and then `LeverageService.ingest()` applies the full event-level policy again. That second gate covers event-specific application/domain/time exclusions, policy changes between preflight and persistence, duplicate rejection and retention.
+
+Providers that may emit more than one privacy class must declare those classes accurately. A future provider with source-specific consent beyond the shared policy should fail closed inside its own collection contract as well.
 
 ## First real provider: minimized Git metadata
 
@@ -84,6 +98,8 @@ The provider executes `git log` only inside explicitly supplied repository direc
 
 Git prompts, pagers and optional locks are disabled for the collection subprocess. A missing/unreadable/non-directory repository or failed `git` command aborts that repository collection rather than falling back to broader discovery.
 
+When observation is paused, `git-metadata` is source-excluded, or the provider's declared privacy class is disallowed, the service skips collection **before** resolving the configured repository path or executing `git log`. Regression tests use deliberately nonexistent repository paths to prove this ordering.
+
 ## Why no MCP collection tool?
 
 MobileLAM analysis tools can inspect data the user has already chosen to store. They should not automatically turn that analytical authority into authority to discover new host filesystem data sources.
@@ -109,6 +125,7 @@ A new provider should answer these questions before implementation:
 6. Can identifiers be replaced with user-chosen labels or opaque references?
 7. Can raw content remain transient rather than enter the event store?
 8. How will tests prove excluded information is absent?
+9. Which policy conditions must prevent the provider from touching its source at all?
 
 Prefer metadata providers before content providers. For example, calendar event timing/categories may be useful without meeting notes; development activity may be useful without source code; communication latency may be useful without message contents.
 
