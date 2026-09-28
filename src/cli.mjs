@@ -8,7 +8,7 @@ import { verifyHostKey } from './pairing.mjs';
 import { loadConfig, SSHTransport } from './transport.mjs';
 import { serve, envelope } from './gateway.mjs';
 import { readinessReport } from './readiness.mjs';
-import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, GitMetadataProvider, CalendarMetadataProvider } from './leverage/index.mjs';
+import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, GitMetadataProvider, CalendarMetadataProvider, renderLeverageReport } from './leverage/index.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -95,6 +95,14 @@ async function leverageCommand() {
     print(await service.analyse({ domain: option('domain'), goal_id: option('goal'), time_horizon: option('horizon', '30d'), as_of: option('as-of') }));
     return;
   }
+  if (subcommand === 'report') {
+    const output = resolve(option('output', 'leverage-report.html'));
+    const state = await service.store.read();
+    const html = renderLeverageReport(state, { generated_at: new Date().toISOString() });
+    writeFileSync(output, html, { encoding: 'utf8', flag: 'wx', mode: 0o600 });
+    print({ status: 'report_written', output, bytes: Buffer.byteLength(html, 'utf8'), raw_events_included: false, overwrite: false });
+    return;
+  }
   if (subcommand === 'review') { print(await service.review()); return; }
   if (subcommand === 'privacy') { print(await service.privacy()); return; }
   if (subcommand === 'feedback') {
@@ -134,7 +142,7 @@ async function leverageCommand() {
     print(await service.deleteHistory({ confirm: option('confirm'), retain_goals: option('retain-goals', 'false') === 'true' }));
     return;
   }
-  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | collect-calendar --file PATH.ics --label SAFE_LABEL [--since 30d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) [--phase baseline|intervention|followup|unspecified] | experiment --opportunity UUID [--days 14] | experiment-evaluate --experiment UUID --metric ID [--direction auto|increase|decrease|maintain|unspecified] [--tolerance NUMBER] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
+  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | collect-calendar --file PATH.ics --label SAFE_LABEL [--since 30d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | report [--output PATH] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) [--phase baseline|intervention|followup|unspecified] | experiment --opportunity UUID [--days 14] | experiment-evaluate --experiment UUID --metric ID [--direction auto|increase|decrease|maintain|unspecified] [--tolerance NUMBER] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
   if (subcommand) process.exitCode = 2;
 }
 
