@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { BridgeError, SSHTransport, loadConfig } from './transport.mjs';
 import { EventSchema, FeedbackSchema, GoalSchema, OutcomeMeasurementSchema, PRIVACY_CLASS } from './leverage/model.mjs';
 import { LeverageService } from './leverage/service.mjs';
+import { detectThresholdSignal } from './leverage/nonlinearity.mjs';
 
 const id = z.string().uuid();
 const metricId = z.string().min(1).max(160).regex(/^[A-Za-z0-9][A-Za-z0-9._:/+-]*$/u);
@@ -89,7 +90,7 @@ export const leverageTools = {
   leverage_outcome_record: {
     local: true,
     schema: OutcomeMeasurementSchema,
-    description: 'Record a measured outcome against an opportunity or experiment. Use phase=baseline/intervention/followup for experiment evaluation; this remains separate from recommendation feedback.',
+    description: 'Record a measured outcome against an opportunity or experiment. Use sample_id to explicitly pair driver/outcome samples for threshold analysis; phase remains separate experiment context.',
     handler: (service, args) => service.recordOutcome(args),
   },
   leverage_experiment: {
@@ -108,6 +109,23 @@ export const leverageTools = {
     }).strict(),
     description: 'Compare phase-tagged baseline and intervention measurements for one experiment metric. Returns a descriptive alignment assessment and explicitly does not establish causality.',
     handler: (service, args) => service.evaluateExperiment(args),
+  },
+  leverage_threshold_detect: {
+    local: true, readOnly: true, idempotent: true,
+    schema: z.object({
+      experiment_id: id,
+      driver_metric_id: metricId,
+      outcome_metric_id: metricId,
+      phase: z.enum(['baseline', 'intervention', 'followup', 'any']).default('intervention'),
+      minimum_samples: z.number().int().min(6).max(1000).default(8),
+      minimum_per_side: z.number().int().min(2).max(500).default(3),
+    }).strict(),
+    description: 'Detect an exploratory threshold/change-point signal from explicitly sample-paired numeric experiment measurements. The result is descriptive, selection-biased until held-out validation, and never establishes causality.',
+    handler: async (service, args) => {
+      const state = await service.store.read();
+      if (!state.experiments.some(item => item.id === args.experiment_id)) throw new Error('Referenced experiment does not exist.');
+      return detectThresholdSignal({ measurements: state.outcome_measurements, ...args });
+    },
   },
   leverage_review: {
     local: true, readOnly: true, idempotent: true,
