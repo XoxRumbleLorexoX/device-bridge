@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildLeverageReportModel, renderLeverageReport } from '../src/leverage/report.mjs';
 import { leverageTools } from '../src/gateway.mjs';
+
+const cliPath = fileURLToPath(new URL('../src/cli.mjs', import.meta.url));
 
 function fixtureState() {
   return {
@@ -9,6 +16,12 @@ function fixtureState() {
     privacy: {
       observation_enabled: true,
       allowed_privacy_classes: ['PUBLIC', 'PERSONAL', 'PRIVATE'],
+      sensitive_consent: false,
+      restricted_consent: false,
+      excluded_applications: [],
+      excluded_domains: [],
+      excluded_sources: [],
+      excluded_periods: [],
       raw_event_retention_days: 90,
     },
     events: [{
@@ -155,4 +168,27 @@ test('report rendering is useful even before analysis has been run', () => {
 test('report file generation remains outside the MCP tool authority boundary', () => {
   const names = Object.keys(leverageTools);
   assert.equal(names.some(name => /report|export|html|file_write/u.test(name)), false);
+});
+
+test('CLI report export creates a private file and refuses overwrite', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'device-bridge-report-'));
+  const storePath = join(directory, 'store.json');
+  const outputPath = join(directory, 'report.html');
+  await writeFile(storePath, JSON.stringify(fixtureState()), { encoding: 'utf8', mode: 0o600 });
+
+  const first = spawnSync(process.execPath, [cliPath, 'leverage', 'report', '--store', storePath, '--output', outputPath], { encoding: 'utf8' });
+  assert.equal(first.status, 0, first.stderr);
+  const response = JSON.parse(first.stdout);
+  assert.equal(response.status, 'report_written');
+  assert.equal(response.raw_events_included, false);
+  assert.equal(response.overwrite, false);
+
+  const info = await stat(outputPath);
+  assert.equal(info.mode & 0o777, 0o600);
+  const html = await readFile(outputPath, 'utf8');
+  for (const secret of forbidden) assert.equal(html.includes(secret), false, `CLI report leaked ${secret}`);
+
+  const second = spawnSync(process.execPath, [cliPath, 'leverage', 'report', '--store', storePath, '--output', outputPath], { encoding: 'utf8' });
+  assert.notEqual(second.status, 0);
+  assert.match(second.stderr, /EEXIST|file already exists|exist/iu);
 });
