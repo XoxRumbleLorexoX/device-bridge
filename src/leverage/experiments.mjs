@@ -37,8 +37,8 @@ function summarize(items) {
 }
 
 function observedDirection(delta, tolerance) {
-  if (delta > tolerance) return 'increase';
-  if (delta < -tolerance) return 'decrease';
+  if (delta > 0 && delta >= tolerance) return 'increase';
+  if (delta < 0 && -delta >= tolerance) return 'decrease';
   return 'within_tolerance';
 }
 
