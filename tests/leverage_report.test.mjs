@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildLeverageReportModel, renderLeverageReport } from '../src/leverage/report.mjs';
+import { leverageTools } from '../src/gateway.mjs';
 
 function fixtureState() {
   return {
@@ -149,4 +150,9 @@ test('report rendering is useful even before analysis has been run', () => {
   assert.match(html, /No analysis snapshot yet/u);
   assert.match(html, /No opportunities available/u);
   assert.match(html, /No leverage graph is available/u);
+});
+
+test('report file generation remains outside the MCP tool authority boundary', () => {
+  const names = Object.keys(leverageTools);
+  assert.equal(names.some(name => /report|export|html|file_write/u.test(name)), false);
 });
