@@ -1,8 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { evaluateExperimentMeasurements } from '../src/leverage/experiments.mjs';
 import { OutcomeMeasurementSchema } from '../src/leverage/model.mjs';
 import { leverageTools } from '../src/gateway.mjs';
+import { LeverageStore } from '../src/leverage/storage.mjs';
+import { LeverageService } from '../src/leverage/service.mjs';
 
 const experiment = Object.freeze({ id: 'experiment-1' });
 
@@ -143,4 +148,32 @@ test('MCP experiment evaluation is explicitly read-only and local', () => {
   assert.equal(tool.readOnly, true);
   assert.equal(tool.idempotent, true);
   assert.match(tool.description, /does not establish causality/u);
+});
+
+test('service auto-direction uses the active outcome metric and evaluation does not mutate stored state', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'device-bridge-experiment-evaluation-'));
+  const store = new LeverageStore(join(directory, 'store.json'));
+  const experimentId = '00000000-0000-4000-8000-000000000010';
+  const opportunityId = '00000000-0000-4000-8000-000000000020';
+  await store.transaction(state => {
+    state.outcome_metrics = [{ id: 'throughput', name: 'Throughput', domain: 'career', unit: 'count/week', direction: 'increase', weight: 0.5 }];
+    state.opportunities = [{ id: opportunityId, lever: { variable: 'throughput', current_value: 2, proposed_value: 4 } }];
+    state.experiments = [{ id: experimentId, opportunity_id: opportunityId, status: 'planned', hypothesis: 'More focused applications may improve throughput.', intervention: 'Batch application work.' }];
+    state.outcome_measurements = [
+      { id: 'baseline-1', experiment_id: experimentId, metric_id: 'throughput', phase: 'baseline', value: 2, unit: 'count/week', confidence: 1, evidence: [] },
+      { id: 'intervention-1', experiment_id: experimentId, metric_id: 'throughput', phase: 'intervention', value: 4, unit: 'count/week', confidence: 1, evidence: [] },
+    ];
+  });
+
+  const before = await store.read();
+  const service = new LeverageService(store, { clock: () => Date.parse('2026-09-28T12:00:00.000Z') });
+  const result = await service.evaluateExperiment({ experiment_id: experimentId, metric_id: 'throughput' });
+  const after = await store.read();
+
+  assert.equal(result.assessment, 'improved');
+  assert.equal(result.target_direction, 'increase');
+  assert.equal(result.direction_provenance, 'active_goal_outcome_metric');
+  assert.equal(result.read_only, true);
+  assert.equal(result.causal_interpretation, 'not_established');
+  assert.deepEqual(after, before, 'read-only evaluation must not modify persisted experiment or recommendation state');
 });
