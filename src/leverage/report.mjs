@@ -1,3 +1,5 @@
+import { evaluateExperimentMeasurements } from './experiments.mjs';
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -29,6 +31,32 @@ function phaseCounts(measurements, experimentId) {
 
 function observationMap(state) {
   return new Map((state.observations ?? []).map(item => [item.variable_id, item]));
+}
+
+function reportExperimentEvaluation(experiment, metricId, measurements, generatedAt) {
+  const evaluation = evaluateExperimentMeasurements({
+    experiment,
+    measurements: measurements ?? [],
+    metric_id: metricId,
+    direction: 'unspecified',
+    minimum_meaningful_change: 0,
+    evaluated_at: generatedAt,
+  });
+  return {
+    metric_id: metricId,
+    unit: evaluation.unit,
+    assessment: evaluation.assessment,
+    observed_direction: evaluation.observed_direction,
+    evidence_level: evaluation.evidence_level,
+    baseline_mean: evaluation.baseline?.confidence_weighted_mean ?? null,
+    baseline_count: evaluation.baseline?.count ?? 0,
+    intervention_mean: evaluation.intervention?.confidence_weighted_mean ?? null,
+    intervention_count: evaluation.intervention?.count ?? 0,
+    absolute_change: evaluation.absolute_change,
+    relative_change: evaluation.relative_change,
+    causal_interpretation: evaluation.causal_interpretation,
+    insufficient_reason_count: evaluation.reasons?.length ?? 0,
+  };
 }
 
 export function buildLeverageReportModel(state, { generated_at = new Date().toISOString() } = {}) {
@@ -85,16 +113,20 @@ export function buildLeverageReportModel(state, { generated_at = new Date().toIS
     action_state: item.action_state,
   }));
 
-  const experiments = (state.experiments ?? []).map(item => ({
-    id: item.id,
-    status: item.status,
-    hypothesis: item.hypothesis,
-    intervention: item.intervention,
-    metrics: Array.isArray(item.metrics) ? item.metrics : [],
-    confidence: finiteConfidence(item.confidence),
-    created_at: item.created_at,
-    phase_counts: phaseCounts(state.outcome_measurements, item.id),
-  }));
+  const experiments = (state.experiments ?? []).map(item => {
+    const metrics = Array.isArray(item.metrics) ? item.metrics : [];
+    return {
+      id: item.id,
+      status: item.status,
+      hypothesis: item.hypothesis,
+      intervention: item.intervention,
+      metrics,
+      confidence: finiteConfidence(item.confidence),
+      created_at: item.created_at,
+      phase_counts: phaseCounts(state.outcome_measurements, item.id),
+      evaluations: metrics.map(metricId => reportExperimentEvaluation(item, metricId, state.outcome_measurements, generated_at)),
+    };
+  });
 
   const allowedTypes = new Set(['goal', 'variable', 'bottleneck', 'opportunity', 'resource']);
   const safeGraph = {
@@ -216,6 +248,15 @@ function renderGraph(graph) {
   return `<div class="graph-wrap"><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Leverage graph"><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#556176"/></marker></defs>${edges}${nodes}</svg></div>`;
 }
 
+function renderExperimentEvidence(item) {
+  if (!item.evaluations.length) return '<span class="muted">No experiment metrics.</span>';
+  return item.evaluations.map(result => {
+    if (result.evidence_level === 'insufficient') return `<div class="evaluation"><strong>${escapeHtml(result.metric_id)}</strong><br><span>insufficient comparable baseline/intervention evidence</span><br><small>causality not established</small></div>`;
+    const unit = result.unit ? ` ${escapeHtml(result.unit)}` : '';
+    return `<div class="evaluation"><strong>${escapeHtml(result.metric_id)}</strong><br><span>${escapeHtml(valueText(result.baseline_mean))} → ${escapeHtml(valueText(result.intervention_mean))}${unit}</span><br><small>observed ${escapeHtml(result.observed_direction)} · ${escapeHtml(result.evidence_level)} · causality not established</small></div>`;
+  }).join('');
+}
+
 export function renderLeverageReport(state, options = {}) {
   const model = buildLeverageReportModel(state, options);
   const analysis = model.analysis;
@@ -251,7 +292,7 @@ export function renderLeverageReport(state, options = {}) {
     <tr><td><strong>${escapeHtml(item.name)}</strong><br><small>${escapeHtml(item.id)}</small></td><td>${escapeHtml(valueText(item.value))}</td><td>${escapeHtml(item.unit)}</td><td>${escapeHtml(confidencePercent(item.confidence))}</td><td>${escapeHtml(valueText(item.controllability))}</td></tr>`).join('') : '<tr><td colspan="5">No variable definitions available.</td></tr>';
 
   const experimentRows = model.experiments.length ? model.experiments.map(item => `
-    <tr><td><strong>${escapeHtml(item.status ?? 'planned')}</strong><br><small>${escapeHtml(item.id)}</small></td><td>${escapeHtml(item.hypothesis ?? '')}</td><td>${escapeHtml(item.intervention ?? '')}</td><td>${escapeHtml(item.metrics.join(', '))}</td><td>B ${item.phase_counts.baseline} · I ${item.phase_counts.intervention} · F ${item.phase_counts.followup}</td></tr>`).join('') : '<tr><td colspan="5">No experiments planned.</td></tr>';
+    <tr><td><strong>${escapeHtml(item.status ?? 'planned')}</strong><br><small>${escapeHtml(item.id)}</small></td><td>${escapeHtml(item.hypothesis ?? '')}</td><td>${escapeHtml(item.intervention ?? '')}</td><td>B ${item.phase_counts.baseline} · I ${item.phase_counts.intervention} · F ${item.phase_counts.followup}</td><td>${renderExperimentEvidence(item)}</td></tr>`).join('') : '<tr><td colspan="5">No experiments planned.</td></tr>';
 
   return `<!doctype html>
 <html lang="en">
@@ -261,7 +302,7 @@ export function renderLeverageReport(state, options = {}) {
 <meta name="color-scheme" content="dark light">
 <title>MobileLAM — Leverage Report</title>
 <style>
-:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:dark;--bg:#0b0d12;--panel:#131722;--panel2:#181d29;--text:#f4f7fb;--muted:#98a2b3;--line:#2a3242;--accent:#8da2fb;--good:#75d6a5;--warn:#f6c177;--danger:#ef8a9a}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% -10%,#1f2a48 0,transparent 36%),var(--bg);color:var(--text)}main{max-width:1280px;margin:auto;padding:36px 24px 80px}header{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin-bottom:28px}h1{font-size:clamp(2rem,5vw,4rem);letter-spacing:-.05em;margin:0}h2{font-size:1.35rem;margin:0 0 16px}h3{margin:8px 0 10px;font-size:1rem}p{color:#c9d1dc;line-height:1.55}.muted,small{color:var(--muted)}.eyebrow{text-transform:uppercase;letter-spacing:.11em;color:var(--muted);font-size:.7rem}.section{margin-top:34px}.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.kpi,.card,.graph-wrap,.table-wrap,.notice{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01)),var(--panel);border:1px solid var(--line);border-radius:16px}.kpi{padding:16px}.kpi-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.kpi-value{font-size:1.75rem;font-weight:750;margin-top:7px}.kpi-detail{font-size:.75rem;color:var(--muted);margin-top:3px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.card{padding:18px;position:relative}.opportunity{padding-left:54px}.rank{position:absolute;left:17px;top:17px;width:27px;height:27px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;color:var(--accent);font-weight:700}.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.chips span{font-size:.72rem;padding:5px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:#cbd4e1}.missing{margin-top:12px;padding:10px;border-left:2px solid var(--warn);background:rgba(246,193,119,.06);font-size:.8rem;color:#d9c7a8}.meter{height:5px;background:#252b38;border-radius:99px;overflow:hidden;margin:13px 0 7px}.meter span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--good))}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:720px}th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}td{font-size:.84rem}.graph-wrap{padding:12px;min-height:380px;overflow:auto}.graph-wrap svg{width:100%;min-width:900px;height:auto;display:block}.graph-node rect{fill:#181e2a;stroke:#3a465c}.graph-node.goal rect{stroke:#8da2fb}.graph-node.variable rect{stroke:#75d6a5}.graph-node.bottleneck rect{stroke:#f6c177}.graph-node.opportunity rect{stroke:#ef8a9a}.graph-edge{stroke:#556176;stroke-width:1.2;opacity:.75}.node-label{fill:#e9eef7;font-size:10px}.node-sub,.edge-label{fill:#8995a7;font-size:8px}.notice{padding:14px 16px;color:#c8d0dc}.privacy{color:var(--muted);font-size:.8rem}.empty{padding:22px;border:1px dashed var(--line);border-radius:14px;color:var(--muted)}@media(max-width:700px){header{align-items:flex-start;flex-direction:column}main{padding:24px 16px 60px}}
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:dark;--bg:#0b0d12;--panel:#131722;--panel2:#181d29;--text:#f4f7fb;--muted:#98a2b3;--line:#2a3242;--accent:#8da2fb;--good:#75d6a5;--warn:#f6c177;--danger:#ef8a9a}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% -10%,#1f2a48 0,transparent 36%),var(--bg);color:var(--text)}main{max-width:1280px;margin:auto;padding:36px 24px 80px}header{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin-bottom:28px}h1{font-size:clamp(2rem,5vw,4rem);letter-spacing:-.05em;margin:0}h2{font-size:1.35rem;margin:0 0 16px}h3{margin:8px 0 10px;font-size:1rem}p{color:#c9d1dc;line-height:1.55}.muted,small{color:var(--muted)}.eyebrow{text-transform:uppercase;letter-spacing:.11em;color:var(--muted);font-size:.7rem}.section{margin-top:34px}.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.kpi,.card,.graph-wrap,.table-wrap,.notice{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01)),var(--panel);border:1px solid var(--line);border-radius:16px}.kpi{padding:16px}.kpi-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.kpi-value{font-size:1.75rem;font-weight:750;margin-top:7px}.kpi-detail{font-size:.75rem;color:var(--muted);margin-top:3px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.card{padding:18px;position:relative}.opportunity{padding-left:54px}.rank{position:absolute;left:17px;top:17px;width:27px;height:27px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;color:var(--accent);font-weight:700}.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.chips span{font-size:.72rem;padding:5px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:#cbd4e1}.missing{margin-top:12px;padding:10px;border-left:2px solid var(--warn);background:rgba(246,193,119,.06);font-size:.8rem;color:#d9c7a8}.meter{height:5px;background:#252b38;border-radius:99px;overflow:hidden;margin:13px 0 7px}.meter span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--good))}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:720px}th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}td{font-size:.84rem}.evaluation+.evaluation{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}.graph-wrap{padding:12px;min-height:380px;overflow:auto}.graph-wrap svg{width:100%;min-width:900px;height:auto;display:block}.graph-node rect{fill:#181e2a;stroke:#3a465c}.graph-node.goal rect{stroke:#8da2fb}.graph-node.variable rect{stroke:#75d6a5}.graph-node.bottleneck rect{stroke:#f6c177}.graph-node.opportunity rect{stroke:#ef8a9a}.graph-edge{stroke:#556176;stroke-width:1.2;opacity:.75}.node-label{fill:#e9eef7;font-size:10px}.node-sub,.edge-label{fill:#8995a7;font-size:8px}.notice{padding:14px 16px;color:#c8d0dc}.privacy{color:var(--muted);font-size:.8rem}.empty{padding:22px;border:1px dashed var(--line);border-radius:14px;color:var(--muted)}@media(max-width:700px){header{align-items:flex-start;flex-direction:column}main{padding:24px 16px 60px}}
 </style>
 </head>
 <body>
@@ -278,9 +319,9 @@ ${kpi('Measured outcomes', model.counts.measured_outcomes, model.privacy.observa
 <section class="section"><h2>Leverage opportunities</h2><div class="grid">${opportunityCards}</div></section>
 <section class="section"><h2>Bottlenecks & uncertainty</h2><div class="grid">${bottleneckCards}</div></section>
 <section class="section"><h2>Variables</h2><div class="table-wrap"><table><thead><tr><th>Variable</th><th>Value</th><th>Unit</th><th>Confidence</th><th>Controllability</th></tr></thead><tbody>${variableRows}</tbody></table></div></section>
-<section class="section"><h2>Experiments</h2><div class="table-wrap"><table><thead><tr><th>Status</th><th>Hypothesis</th><th>Intervention</th><th>Metrics</th><th>Measurements</th></tr></thead><tbody>${experimentRows}</tbody></table></div></section>
+<section class="section"><h2>Experiments & observed change</h2><div class="table-wrap"><table><thead><tr><th>Status</th><th>Hypothesis</th><th>Intervention</th><th>Measurements</th><th>Observed evidence</th></tr></thead><tbody>${experimentRows}</tbody></table></div><p class="privacy">Report experiment summaries are direction-only descriptive comparisons with zero configured meaningful-change tolerance. Use explicit experiment evaluation when you want a target direction/tolerance judgment.</p></section>
 <section class="section"><h2>Leverage map</h2>${renderGraph(model.graph)}</section>
-<section class="section"><div class="notice"><strong>Interpretation boundary.</strong> This report visualizes stored observations, hypotheses, counterfactual estimates and recommendations. It does not turn associations into causal facts, and it does not execute recommendations.</div><p class="privacy">Raw events, raw provider references, provider context and full evidence text are deliberately omitted from this HTML report. The report still contains personal derived data such as goals and recommendations; store/share it accordingly.</p></section>
+<section class="section"><div class="notice"><strong>Interpretation boundary.</strong> This report visualizes stored observations, hypotheses, counterfactual estimates and recommendations. It does not turn associations or before/after experiment changes into causal facts, and it does not execute recommendations.</div><p class="privacy">Raw events, raw provider references, provider context and full evidence text are deliberately omitted from this HTML report. The report still contains personal derived data such as goals and recommendations; store/share it accordingly.</p></section>
 </main>
 </body>
 </html>`;
