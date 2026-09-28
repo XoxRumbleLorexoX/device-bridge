@@ -7,7 +7,7 @@ import { EventSchema, FeedbackSchema, GoalSchema, OutcomeMeasurementSchema, PRIV
 import { LeverageService } from './leverage/service.mjs';
 
 const id = z.string().uuid();
-const metricId = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/u);
+const metricId = z.string().min(1).max(160).regex(/^[A-Za-z0-9][A-Za-z0-9._:/+-]*$/u);
 const base = { device_id: id, request_id: id, deadline: z.number().finite() };
 const session = { ...base, session_id: id, fence: z.number().int().positive() };
 const text = z.string().min(1).max(64).refine(s => !/[\x00-\x1f\x7f]/u.test(s), 'Control characters and implicit submission are forbidden');
