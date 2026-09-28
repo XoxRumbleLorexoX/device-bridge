@@ -9,6 +9,7 @@ export { GitMetadataProvider } from './git_provider.mjs';
 export { CalendarMetadataProvider } from './calendar_provider.mjs';
 export { estimateCapacityShift, syntheticLeverageFixture } from './pipeline.mjs';
 export { detectRepeatedSequences, detectFriction, extractFrictionVariables, discoverFrictionCandidates } from './friction.mjs';
+export { evaluateExperimentMeasurements } from './experiments.mjs';
 export { deriveOutcomeMetrics, detectBottlenecks, attachOpportunityCosts, enrichLeverageMap, toProactiveInsight } from './reasoning.mjs';
 export { assertDomainModule, discoverDomainCandidates, makeDomainCandidate } from './domains.mjs';
 

@@ -61,6 +61,7 @@ export const OutcomeMeasurementSchema = z.object({
   opportunity_id: z.string().uuid().optional(),
   experiment_id: z.string().uuid().optional(),
   metric_id: identifier,
+  phase: z.enum(['baseline', 'intervention', 'followup', 'unspecified']).default('unspecified'),
   timestamp: z.string().datetime({ offset: true }).optional(),
   value: scalarValue,
   unit: z.string().min(1).max(80),

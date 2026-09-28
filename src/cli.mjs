@@ -108,7 +108,9 @@ async function leverageCommand() {
     const metricId = option('metric'); const unit = option('unit'); const value = option('value');
     const opportunityId = option('opportunity'); const experimentId = option('experiment');
     if (!metricId || !unit || value === undefined || (!opportunityId && !experimentId)) throw Error('leverage outcome requires --metric ID --value VALUE --unit UNIT and --opportunity UUID or --experiment UUID');
-    print(await service.recordOutcome({ opportunity_id: opportunityId, experiment_id: experimentId, metric_id: metricId, value: parseScalar(value), unit, confidence: Number(option('confidence', '1')), note: option('note') }));
+    const phase = option('phase', 'unspecified');
+    if (!['baseline', 'intervention', 'followup', 'unspecified'].includes(phase)) throw Error('leverage outcome --phase must be baseline, intervention, followup or unspecified');
+    print(await service.recordOutcome({ opportunity_id: opportunityId, experiment_id: experimentId, metric_id: metricId, phase, value: parseScalar(value), unit, confidence: Number(option('confidence', '1')), note: option('note') }));
     return;
   }
   if (subcommand === 'experiment') {
@@ -117,11 +119,22 @@ async function leverageCommand() {
     print(await service.createExperiment({ opportunity_id: opportunityId, period_days: Number(option('days', '14')) }));
     return;
   }
+  if (subcommand === 'experiment-evaluate') {
+    const experimentId = option('experiment'); const metricId = option('metric');
+    if (!experimentId || !metricId) throw Error('leverage experiment-evaluate requires --experiment UUID --metric ID');
+    print(await service.evaluateExperiment({
+      experiment_id: experimentId,
+      metric_id: metricId,
+      direction: option('direction', 'auto'),
+      minimum_meaningful_change: Number(option('tolerance', '0')),
+    }));
+    return;
+  }
   if (subcommand === 'delete-history') {
     print(await service.deleteHistory({ confirm: option('confirm'), retain_goals: option('retain-goals', 'false') === 'true' }));
     return;
   }
-  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | collect-calendar --file PATH.ics --label SAFE_LABEL [--since 30d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) | experiment --opportunity UUID [--days 14] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
+  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | collect-calendar --file PATH.ics --label SAFE_LABEL [--since 30d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) [--phase baseline|intervention|followup|unspecified] | experiment --opportunity UUID [--days 14] | experiment-evaluate --experiment UUID --metric ID [--direction auto|increase|decrease|maintain|unspecified] [--tolerance NUMBER] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
   if (subcommand) process.exitCode = 2;
 }
 

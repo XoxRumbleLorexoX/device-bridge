@@ -7,6 +7,7 @@ import { EventSchema, FeedbackSchema, GoalSchema, OutcomeMeasurementSchema, PRIV
 import { LeverageService } from './leverage/service.mjs';
 
 const id = z.string().uuid();
+const metricId = z.string().min(1).max(160).regex(/^[A-Za-z0-9][A-Za-z0-9._:/+-]*$/u);
 const base = { device_id: id, request_id: id, deadline: z.number().finite() };
 const session = { ...base, session_id: id, fence: z.number().int().positive() };
 const text = z.string().min(1).max(64).refine(s => !/[\x00-\x1f\x7f]/u.test(s), 'Control characters and implicit submission are forbidden');
@@ -88,7 +89,7 @@ export const leverageTools = {
   leverage_outcome_record: {
     local: true,
     schema: OutcomeMeasurementSchema,
-    description: 'Record a measured outcome against an opportunity or experiment. This is separate from whether the user liked or accepted the recommendation.',
+    description: 'Record a measured outcome against an opportunity or experiment. Use phase=baseline/intervention/followup for experiment evaluation; this remains separate from recommendation feedback.',
     handler: (service, args) => service.recordOutcome(args),
   },
   leverage_experiment: {
@@ -96,6 +97,17 @@ export const leverageTools = {
     schema: z.object({ opportunity_id: id, period_days: z.number().int().min(3).max(90).default(14) }).strict(),
     description: 'Create a bounded measurement experiment when causality is uncertain rather than asserting that a recommendation will work.',
     handler: (service, args) => service.createExperiment(args),
+  },
+  leverage_experiment_evaluate: {
+    local: true, readOnly: true, idempotent: true,
+    schema: z.object({
+      experiment_id: id,
+      metric_id: metricId,
+      direction: z.enum(['auto', 'increase', 'decrease', 'maintain', 'unspecified']).default('auto'),
+      minimum_meaningful_change: z.number().finite().min(0).default(0),
+    }).strict(),
+    description: 'Compare phase-tagged baseline and intervention measurements for one experiment metric. Returns a descriptive alignment assessment and explicitly does not establish causality.',
+    handler: (service, args) => service.evaluateExperiment(args),
   },
   leverage_review: {
     local: true, readOnly: true, idempotent: true,
