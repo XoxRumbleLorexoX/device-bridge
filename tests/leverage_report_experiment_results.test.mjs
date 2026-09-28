@@ -57,7 +57,7 @@ test('report model includes sanitized descriptive experiment comparisons', () =>
 
 test('HTML displays observed experiment direction with an explicit causal caveat', () => {
   const html = renderLeverageReport(stateWithExperiment(), { generated_at: '2026-09-28T12:00:00.000Z' });
-  assert.match(html, /Experiments &amp; observed change/u);
+  assert.match(html, /Experiments & observed change/u);
   assert.match(html, /career\.throughput/u);
   assert.match(html, /2\.6667 → 5\.6667 count\/week/u);
   assert.match(html, /observed increase · two_measurements_each_phase · causality not established/u);
