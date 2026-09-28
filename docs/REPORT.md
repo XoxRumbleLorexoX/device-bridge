@@ -46,10 +46,26 @@ The report can include:
 - bottleneck type/status/confidence and missing-variable names;
 - leverage opportunity title, expected effect, confidence and ordering heuristic;
 - experiment hypothesis/intervention/metric names and measurement phase counts;
+- sanitized descriptive experiment comparisons for numeric baseline/intervention measurements;
 - sanitized leverage-graph node/edge labels, claim type and confidence;
 - high-level observation-policy status.
 
 The ordering heuristic remains an ordering aid, not a truth/value probability.
+
+### Experiment evidence in the report
+
+For each experiment metric the report can display:
+
+- confidence-weighted baseline mean;
+- confidence-weighted intervention mean;
+- observed direction (`increase`, `decrease`, or `within_tolerance`);
+- evidence level based on comparable per-phase sample count;
+- whether evidence is insufficient;
+- the explicit causal marker `not_established`.
+
+The report deliberately evaluates these summaries with **direction `unspecified`** and a zero configured meaningful-change tolerance. That means it describes observed change but does not automatically label the experiment `improved`, `worsened`, successful, or failed.
+
+Use `leverage experiment-evaluate` / `leverage_experiment_evaluate` when you explicitly want a target direction and meaningful-change tolerance applied. Those evaluations also remain descriptive and do not establish causality.
 
 ## Deliberately excluded
 
@@ -60,6 +76,7 @@ The report model does **not** include:
 - provider event context;
 - `raw_event_ref` values;
 - full evidence arrays/text;
+- measurement IDs from experiment evaluation internals;
 - full assumption text;
 - full alternative text;
 - measurement evidence text.
@@ -72,7 +89,7 @@ All rendered text is HTML-escaped. The standalone output contains no script elem
 
 This reduces accidental raw-content exposure and eliminates a browser-network dependency. It does **not** make the report non-sensitive.
 
-Goals, variable values, bottlenecks, hypotheses and recommendations are themselves derived personal information. Treat the generated HTML as private data and store/share it accordingly.
+Goals, variable values, bottlenecks, hypotheses, experiment summaries and recommendations are themselves derived personal information. Treat the generated HTML as private data and store/share it accordingly.
 
 The file is not application-level encrypted. Host/disk encryption remains the appropriate control when encryption-at-rest is required.
 
@@ -92,10 +109,11 @@ This mirrors the provider boundary: analytical authority should not silently exp
 The report visualizes the model as it currently exists. It does not:
 
 - turn a hypothesis edge into a causal fact;
+- turn a before/after experiment difference into a causal effect;
 - automatically accept a recommendation;
 - execute a recommendation;
 - change experiment status;
 - change ranking or feedback;
 - contact the phone.
 
-Dashed leverage-map edges represent hypotheses where applicable. Counterfactual and observational relationships retain their existing claim semantics.
+Dashed leverage-map edges represent hypotheses where applicable. Counterfactual, observational and experiment before/after relationships retain their existing claim semantics.
