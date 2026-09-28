@@ -8,7 +8,7 @@ import { verifyHostKey } from './pairing.mjs';
 import { loadConfig, SSHTransport } from './transport.mjs';
 import { serve, envelope } from './gateway.mjs';
 import { readinessReport } from './readiness.mjs';
-import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, GitMetadataProvider, CalendarMetadataProvider, renderLeverageReport } from './leverage/index.mjs';
+import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, GitMetadataProvider, CalendarMetadataProvider, renderLeverageReport, detectThresholdSignal } from './leverage/index.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -118,7 +118,7 @@ async function leverageCommand() {
     if (!metricId || !unit || value === undefined || (!opportunityId && !experimentId)) throw Error('leverage outcome requires --metric ID --value VALUE --unit UNIT and --opportunity UUID or --experiment UUID');
     const phase = option('phase', 'unspecified');
     if (!['baseline', 'intervention', 'followup', 'unspecified'].includes(phase)) throw Error('leverage outcome --phase must be baseline, intervention, followup or unspecified');
-    print(await service.recordOutcome({ opportunity_id: opportunityId, experiment_id: experimentId, metric_id: metricId, phase, value: parseScalar(value), unit, confidence: Number(option('confidence', '1')), note: option('note') }));
+    print(await service.recordOutcome({ opportunity_id: opportunityId, experiment_id: experimentId, metric_id: metricId, sample_id: option('sample'), phase, value: parseScalar(value), unit, confidence: Number(option('confidence', '1')), note: option('note') }));
     return;
   }
   if (subcommand === 'experiment') {
@@ -138,11 +138,29 @@ async function leverageCommand() {
     }));
     return;
   }
+  if (subcommand === 'threshold-detect') {
+    const experimentId = option('experiment');
+    const driverMetricId = option('driver');
+    const outcomeMetricId = option('outcome');
+    if (!experimentId || !driverMetricId || !outcomeMetricId) throw Error('leverage threshold-detect requires --experiment UUID --driver METRIC --outcome METRIC');
+    const state = await service.store.read();
+    if (!state.experiments.some(item => item.id === experimentId)) throw Error('Referenced experiment does not exist.');
+    print(detectThresholdSignal({
+      measurements: state.outcome_measurements,
+      experiment_id: experimentId,
+      driver_metric_id: driverMetricId,
+      outcome_metric_id: outcomeMetricId,
+      phase: option('phase', 'intervention'),
+      minimum_samples: Number(option('minimum-samples', '8')),
+      minimum_per_side: Number(option('minimum-per-side', '3')),
+    }));
+    return;
+  }
   if (subcommand === 'delete-history') {
     print(await service.deleteHistory({ confirm: option('confirm'), retain_goals: option('retain-goals', 'false') === 'true' }));
     return;
   }
-  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | collect-calendar --file PATH.ics --label SAFE_LABEL [--since 30d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | report [--output PATH] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) [--phase baseline|intervention|followup|unspecified] | experiment --opportunity UUID [--days 14] | experiment-evaluate --experiment UUID --metric ID [--direction auto|increase|decrease|maintain|unspecified] [--tolerance NUMBER] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
+  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | collect-calendar --file PATH.ics --label SAFE_LABEL [--since 30d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | report [--output PATH] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) [--sample SAMPLE_ID] [--phase baseline|intervention|followup|unspecified] | experiment --opportunity UUID [--days 14] | experiment-evaluate --experiment UUID --metric ID [--direction auto|increase|decrease|maintain|unspecified] [--tolerance NUMBER] | threshold-detect --experiment UUID --driver METRIC --outcome METRIC [--phase baseline|intervention|followup|any] [--minimum-samples 8] [--minimum-per-side 3] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
   if (subcommand) process.exitCode = 2;
 }
 
