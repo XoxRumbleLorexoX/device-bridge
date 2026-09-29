@@ -1,5 +1,6 @@
 const ANALYSABLE_PHASES = new Set(['baseline', 'intervention', 'followup']);
 const EXPECTED_THRESHOLD_CHANGES = new Set(['outcome_higher_above_threshold', 'outcome_lower_above_threshold', 'no_observed_mean_difference', 'unspecified']);
+const DIRECTIONAL_THRESHOLD_CHANGES = new Set(['outcome_higher_above_threshold', 'outcome_lower_above_threshold']);
 
 function round(value, digits = 4) {
   if (!Number.isFinite(value)) return null;
@@ -287,7 +288,10 @@ export function validateFixedThresholdSignal({
   validateThresholdArguments({ measurements, experiment_id, driver_metric_id, outcome_metric_id, phase, minimum_samples, minimum_per_side });
   if (!Number.isFinite(threshold_value)) throw new TypeError('threshold_value must be a finite number.');
   if (!EXPECTED_THRESHOLD_CHANGES.has(expected_change)) throw new TypeError('expected_change is invalid.');
-  if (minimum_absolute_change !== null && (!Number.isFinite(minimum_absolute_change) || minimum_absolute_change < 0)) throw new TypeError('minimum_absolute_change must be null or a non-negative finite number.');
+  if (minimum_absolute_change !== null) {
+    if (!Number.isFinite(minimum_absolute_change) || minimum_absolute_change < 0) throw new TypeError('minimum_absolute_change must be null or a non-negative finite number.');
+    if (!DIRECTIONAL_THRESHOLD_CHANGES.has(expected_change)) throw new TypeError('minimum_absolute_change is only valid for directional expected_change values.');
+  }
 
   const pairing = pairedSamples(measurements, {
     experimentId: experiment_id,
