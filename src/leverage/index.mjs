@@ -11,7 +11,7 @@ export { estimateCapacityShift, syntheticLeverageFixture } from './pipeline.mjs'
 export { detectRepeatedSequences, detectFriction, extractFrictionVariables, discoverFrictionCandidates } from './friction.mjs';
 export { evaluateExperimentMeasurements } from './experiments.mjs';
 export { detectThresholdSignal, validateFixedThresholdSignal } from './nonlinearity.mjs';
-export { registerThresholdHypothesis, listThresholdHypotheses, validateRegisteredThreshold } from './thresholds.mjs';
+export { registerThresholdHypothesis, listThresholdHypotheses, evaluateRegisteredThresholdState, validateRegisteredThreshold } from './thresholds.mjs';
 export { buildLeverageReportModel, renderLeverageReport } from './report.mjs';
 export { deriveOutcomeMetrics, detectBottlenecks, attachOpportunityCosts, enrichLeverageMap, toProactiveInsight } from './reasoning.mjs';
 export { assertDomainModule, discoverDomainCandidates, makeDomainCandidate } from './domains.mjs';
