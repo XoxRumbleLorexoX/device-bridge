@@ -10,8 +10,11 @@ This milestone separates exploratory threshold discovery from pre-registered hel
 - Registration is a separate explicit action; discovery does not auto-register itself.
 - A registered hypothesis freezes the threshold, metrics, phase, units, expected direction and sample requirements.
 - Registration records the current `outcome_measurements.length` as an append boundary.
-- Validation uses only records appended after that boundary.
-- Caller-supplied timestamps cannot move an already-present discovery observation into the hold-out set.
+- Registration also hashes the complete pre-registration measurement prefix with SHA-256.
+- Validation first verifies that frozen prefix digest, then uses only records appended after the boundary.
+- Caller-supplied timestamps cannot move an already-present record into the held-out slice.
+- Prefix mutation/reordering/truncation fails closed rather than silently reconstructing the boundary.
+- The boundary proves store-level separation, not that every later-appended record was genuinely observed later in the real world; validation reports `real_world_observation_novelty_verified: false`.
 - Validation never searches for or moves the threshold: `threshold_reselected: false`.
 - Pre-registered unit drift fails closed.
 - Direction mismatch is reported descriptively and does not rewrite the hypothesis.
@@ -60,9 +63,10 @@ No threshold tool invokes SSH, DeviceBridge or a provider.
 
 `tests/threshold_validation.test.mjs` covers:
 
-- registration freezing the current append boundary;
-- immediate validation having zero hold-out measurements;
-- discovery measurements with an opposite pattern not leaking into validation;
+- registration freezing the current append boundary and prefix digest;
+- immediate validation having zero later-appended measurements;
+- opposite pre-registration store data not entering the validation slice;
+- frozen-prefix mutation detection;
 - fixed-threshold validation preserving the registered split;
 - direction mismatch without state mutation;
 - unit drift failure;
