@@ -12,7 +12,7 @@ export { detectRepeatedSequences, detectFriction, extractFrictionVariables, disc
 export { evaluateExperimentMeasurements } from './experiments.mjs';
 export { detectThresholdSignal, validateFixedThresholdSignal } from './nonlinearity.mjs';
 export { registerThresholdHypothesis, listThresholdHypotheses, evaluateRegisteredThresholdState, validateRegisteredThreshold } from './thresholds.mjs';
-export { buildLeverageReportModel, renderLeverageReport } from './report.mjs';
+export { buildLeverageReportModel, renderLeverageReport } from './report_thresholds.mjs';
 export { deriveOutcomeMetrics, detectBottlenecks, attachOpportunityCosts, enrichLeverageMap, toProactiveInsight } from './reasoning.mjs';
 export { assertDomainModule, discoverDomainCandidates, makeDomainCandidate } from './domains.mjs';
 
