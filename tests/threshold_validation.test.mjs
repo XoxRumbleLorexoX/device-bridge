@@ -121,6 +121,49 @@ test('fixed-threshold pure evaluation never searches for a better threshold', ()
   assert.equal(result.threshold_reselected, false);
 });
 
+test('minimum absolute change is rejected for non-directional hypotheses', async () => {
+  const store = await seededStore();
+  await assert.rejects(
+    registerThresholdHypothesis(store, {
+      ...registrationInput,
+      expected_change: 'no_observed_mean_difference',
+      minimum_absolute_change: 1,
+    }),
+    /only valid for directional threshold hypotheses/u,
+  );
+  assert.throws(() => validateFixedThresholdSignal({
+    measurements: stepPairs('nondirectional', 10, 10),
+    experiment_id: experimentId,
+    driver_metric_id: 'driver',
+    outcome_metric_id: 'outcome',
+    threshold_value: 5.5,
+    expected_change: 'no_observed_mean_difference',
+    expected_driver_unit: 'hours',
+    expected_outcome_unit: 'units',
+    minimum_absolute_change: 1,
+  }), /only valid for directional expected_change values/u);
+});
+
+test('no-difference expectation is descriptive exact equality, not an equivalence test', () => {
+  const result = validateFixedThresholdSignal({
+    measurements: stepPairs('same', 10, 10),
+    experiment_id: experimentId,
+    driver_metric_id: 'driver',
+    outcome_metric_id: 'outcome',
+    threshold_value: 5.5,
+    expected_change: 'no_observed_mean_difference',
+    expected_driver_unit: 'hours',
+    expected_outcome_unit: 'units',
+    minimum_samples: 8,
+    minimum_per_side: 3,
+  });
+  assert.equal(result.observed_change, 'no_observed_mean_difference');
+  assert.equal(result.direction_consistent, true);
+  assert.equal(result.magnitude_requirement_met, null);
+  assert.equal(result.pattern_consistent, true);
+  assert.equal(result.causal_interpretation, 'not_established');
+});
+
 test('schema-v1 stores backfill threshold_hypotheses without a schema migration', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'device-bridge-threshold-backfill-'));
   const path = join(directory, 'store.json');
