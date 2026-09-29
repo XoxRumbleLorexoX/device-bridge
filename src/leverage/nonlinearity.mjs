@@ -1,4 +1,5 @@
 const ANALYSABLE_PHASES = new Set(['baseline', 'intervention', 'followup']);
+const EXPECTED_THRESHOLD_CHANGES = new Set(['outcome_higher_above_threshold', 'outcome_lower_above_threshold', 'no_observed_mean_difference', 'unspecified']);
 
 function round(value, digits = 4) {
   if (!Number.isFinite(value)) return null;
@@ -89,8 +90,6 @@ function measurementEligible(item, experimentId, metricId, phase) {
 }
 
 function pairingKey(item, requestedPhase) {
-  // Even an all-phase query must never pair a driver from one experiment phase with
-  // an outcome from another. A sample identifier is only meaningful inside its phase.
   return requestedPhase === 'any' ? `${item.phase}\u0000${item.sample_id}` : item.sample_id;
 }
 
@@ -136,6 +135,23 @@ function pairedSamples(measurements, { experimentId, driverMetricId, outcomeMetr
   return { pairs, relevant_count: relevant.length, ineligible_count: ineligible, unpaired_count: unpaired, ambiguous_count: ambiguous };
 }
 
+function validateThresholdArguments({ measurements, experiment_id, driver_metric_id, outcome_metric_id, phase, minimum_samples, minimum_per_side }) {
+  if (!Array.isArray(measurements)) throw new TypeError('measurements must be an array.');
+  if (typeof experiment_id !== 'string' || !experiment_id) throw new TypeError('experiment_id is required.');
+  if (typeof driver_metric_id !== 'string' || !driver_metric_id) throw new TypeError('driver_metric_id is required.');
+  if (typeof outcome_metric_id !== 'string' || !outcome_metric_id) throw new TypeError('outcome_metric_id is required.');
+  if (driver_metric_id === outcome_metric_id) throw new TypeError('driver_metric_id and outcome_metric_id must be different.');
+  if (!['baseline', 'intervention', 'followup', 'any'].includes(phase)) throw new TypeError('phase must be baseline, intervention, followup or any.');
+  if (!Number.isInteger(minimum_samples) || minimum_samples < 6 || minimum_samples > 1000) throw new TypeError('minimum_samples must be an integer between 6 and 1000.');
+  if (!Number.isInteger(minimum_per_side) || minimum_per_side < 2 || minimum_per_side > 500) throw new TypeError('minimum_per_side must be an integer between 2 and 500.');
+}
+
+function observedChange(difference) {
+  if (difference > 0) return 'outcome_higher_above_threshold';
+  if (difference < 0) return 'outcome_lower_above_threshold';
+  return 'no_observed_mean_difference';
+}
+
 export function detectThresholdSignal({
   measurements,
   experiment_id,
@@ -145,14 +161,7 @@ export function detectThresholdSignal({
   minimum_samples = 8,
   minimum_per_side = 3,
 } = {}) {
-  if (!Array.isArray(measurements)) throw new TypeError('measurements must be an array.');
-  if (typeof experiment_id !== 'string' || !experiment_id) throw new TypeError('experiment_id is required.');
-  if (typeof driver_metric_id !== 'string' || !driver_metric_id) throw new TypeError('driver_metric_id is required.');
-  if (typeof outcome_metric_id !== 'string' || !outcome_metric_id) throw new TypeError('outcome_metric_id is required.');
-  if (driver_metric_id === outcome_metric_id) throw new TypeError('driver_metric_id and outcome_metric_id must be different.');
-  if (!['baseline', 'intervention', 'followup', 'any'].includes(phase)) throw new TypeError('phase must be baseline, intervention, followup or any.');
-  if (!Number.isInteger(minimum_samples) || minimum_samples < 6 || minimum_samples > 1000) throw new TypeError('minimum_samples must be an integer between 6 and 1000.');
-  if (!Number.isInteger(minimum_per_side) || minimum_per_side < 2 || minimum_per_side > 500) throw new TypeError('minimum_per_side must be an integer between 2 and 500.');
+  validateThresholdArguments({ measurements, experiment_id, driver_metric_id, outcome_metric_id, phase, minimum_samples, minimum_per_side });
 
   const pairing = pairedSamples(measurements, {
     experimentId: experiment_id,
@@ -174,15 +183,11 @@ export function detectThresholdSignal({
     excluded_ambiguous_sample_count: pairing.ambiguous_count,
   };
 
-  if (pairing.pairs.length < minimum_samples) {
-    return insufficient(base, [`${minimum_samples} usable paired samples are required; ${pairing.pairs.length} are available.`]);
-  }
+  if (pairing.pairs.length < minimum_samples) return insufficient(base, [`${minimum_samples} usable paired samples are required; ${pairing.pairs.length} are available.`]);
 
   const driverUnits = [...new Set(pairing.pairs.map(pair => pair.driver_unit))];
   const outcomeUnits = [...new Set(pairing.pairs.map(pair => pair.outcome_unit))];
-  if (driverUnits.length !== 1 || outcomeUnits.length !== 1) {
-    return insufficient(base, ['Paired samples must use one consistent driver unit and one consistent outcome unit.']);
-  }
+  if (driverUnits.length !== 1 || outcomeUnits.length !== 1) return insufficient(base, ['Paired samples must use one consistent driver unit and one consistent outcome unit.']);
 
   const sorted = [...pairing.pairs].sort((a, b) => a.driver - b.driver);
   const distinctDrivers = [...new Set(sorted.map(pair => pair.driver))];
@@ -225,8 +230,6 @@ export function detectThresholdSignal({
     return a.value - b.value;
   });
   const best = candidates[0];
-  const observedChange = best.absolute_change > 0 ? 'outcome_higher_above_threshold' : best.absolute_change < 0 ? 'outcome_lower_above_threshold' : 'no_observed_mean_difference';
-
   const limitations = [
     'This is an exploratory change-point signal, not proof that a real discontinuity or causal threshold exists.',
     'The threshold was selected on the same samples used to measure separation, so the observed effect is selection-biased upward unless confirmed on new data.',
@@ -256,7 +259,7 @@ export function detectThresholdSignal({
       relative_change: best.relative_change === null ? null : round(best.relative_change),
       standardized_mean_difference: best.standardized_mean_difference === null ? null : round(best.standardized_mean_difference),
     },
-    observed_change: observedChange,
+    observed_change: observedChange(best.absolute_change),
     evidence_level: evidenceLevel(pairing.pairs.length, best.below_count, best.above_count),
     selection_method: 'Largest absolute confidence-weighted outcome-mean separation across eligible midpoint splits; ties prefer the more balanced split.',
     causal_interpretation: 'not_established',
@@ -264,5 +267,119 @@ export function detectThresholdSignal({
     reasons: [],
     limitations,
     recommended_next_step: 'Pre-register this candidate split, collect new paired samples on both sides without changing the threshold, and compare the held-out outcome separation.',
+  };
+}
+
+export function validateFixedThresholdSignal({
+  measurements,
+  experiment_id,
+  driver_metric_id,
+  outcome_metric_id,
+  threshold_value,
+  phase = 'intervention',
+  minimum_samples = 6,
+  minimum_per_side = 3,
+  expected_change = 'unspecified',
+  expected_driver_unit,
+  expected_outcome_unit,
+  minimum_absolute_change = null,
+} = {}) {
+  validateThresholdArguments({ measurements, experiment_id, driver_metric_id, outcome_metric_id, phase, minimum_samples, minimum_per_side });
+  if (!Number.isFinite(threshold_value)) throw new TypeError('threshold_value must be a finite number.');
+  if (!EXPECTED_THRESHOLD_CHANGES.has(expected_change)) throw new TypeError('expected_change is invalid.');
+  if (minimum_absolute_change !== null && (!Number.isFinite(minimum_absolute_change) || minimum_absolute_change < 0)) throw new TypeError('minimum_absolute_change must be null or a non-negative finite number.');
+
+  const pairing = pairedSamples(measurements, {
+    experimentId: experiment_id,
+    driverMetricId: driver_metric_id,
+    outcomeMetricId: outcome_metric_id,
+    phase,
+  });
+  const base = {
+    experiment_id,
+    driver_metric_id,
+    outcome_metric_id,
+    phase,
+    threshold_value: round(threshold_value),
+    minimum_samples,
+    minimum_per_side,
+    expected_change,
+    minimum_absolute_change,
+    relevant_measurement_count: pairing.relevant_count,
+    usable_pair_count: pairing.pairs.length,
+    excluded_ineligible_measurement_count: pairing.ineligible_count,
+    excluded_unpaired_sample_count: pairing.unpaired_count,
+    excluded_ambiguous_sample_count: pairing.ambiguous_count,
+  };
+  const fail = reasons => ({
+    ...base,
+    status: 'insufficient_evidence',
+    threshold: null,
+    observed_change: 'unknown',
+    direction_consistent: null,
+    magnitude_requirement_met: null,
+    pattern_consistent: null,
+    evidence_level: 'insufficient',
+    reasons,
+    causal_interpretation: 'not_established',
+    threshold_reselected: false,
+    limitations: baseLimitations(phase),
+  });
+
+  if (pairing.pairs.length < minimum_samples) return fail([`${minimum_samples} usable paired samples are required; ${pairing.pairs.length} are available.`]);
+  const driverUnits = [...new Set(pairing.pairs.map(pair => pair.driver_unit))];
+  const outcomeUnits = [...new Set(pairing.pairs.map(pair => pair.outcome_unit))];
+  if (driverUnits.length !== 1 || outcomeUnits.length !== 1) return fail(['Paired samples must use one consistent driver unit and one consistent outcome unit.']);
+  if (expected_driver_unit && driverUnits[0] !== expected_driver_unit) return fail([`Held-out driver unit ${driverUnits[0]} does not match pre-registered unit ${expected_driver_unit}.`]);
+  if (expected_outcome_unit && outcomeUnits[0] !== expected_outcome_unit) return fail([`Held-out outcome unit ${outcomeUnits[0]} does not match pre-registered unit ${expected_outcome_unit}.`]);
+
+  const below = pairing.pairs.filter(pair => pair.driver < threshold_value);
+  const above = pairing.pairs.filter(pair => pair.driver >= threshold_value);
+  if (below.length < minimum_per_side || above.length < minimum_per_side) return fail([`The fixed threshold leaves ${below.length} sample(s) below and ${above.length} above; at least ${minimum_per_side} are required on each side.`]);
+  const belowMean = weightedMean(below);
+  const aboveMean = weightedMean(above);
+  if (belowMean === null || aboveMean === null) return fail(['Positive aggregate confidence is required on both sides of the fixed threshold.']);
+
+  const difference = aboveMean - belowMean;
+  const observed = observedChange(difference);
+  const directionConsistent = expected_change === 'unspecified' ? null : observed === expected_change;
+  const magnitudeMet = minimum_absolute_change === null ? null : Math.abs(difference) >= minimum_absolute_change;
+  const patternConsistent = expected_change === 'unspecified'
+    ? null
+    : directionConsistent && (magnitudeMet === null || magnitudeMet);
+  const limitations = [
+    'The threshold is fixed rather than re-selected on these measurements, reducing discovery-set winner selection bias but not eliminating confounding or measurement bias.',
+    'Direction consistency means the held-out descriptive mean difference points the pre-registered way; it is not a causal confirmation or statistical significance test.',
+    'The standardized mean difference is descriptive and unweighted.',
+    'No p-value, causal effect or guarantee of future generalization is claimed.',
+  ];
+  if (phase === 'any') limitations.push('Held-out pairs remain phase-local, but the fixed-threshold summary pools baseline, intervention and follow-up pairs.');
+
+  return {
+    ...base,
+    status: 'fixed_threshold_evaluation',
+    driver_unit: driverUnits[0],
+    outcome_unit: outcomeUnits[0],
+    threshold: {
+      value: round(threshold_value),
+      below_count: below.length,
+      above_count: above.length,
+      below_outcome_mean: round(belowMean),
+      above_outcome_mean: round(aboveMean),
+      below_outcome_median: round(median(below.map(pair => pair.outcome))),
+      above_outcome_median: round(median(above.map(pair => pair.outcome))),
+      absolute_change: round(difference),
+      relative_change: belowMean === 0 ? null : round(difference / Math.abs(belowMean)),
+      standardized_mean_difference: round(pooledStandardizedDifference(below, above)),
+    },
+    observed_change: observed,
+    direction_consistent: directionConsistent,
+    magnitude_requirement_met: magnitudeMet,
+    pattern_consistent: patternConsistent,
+    evidence_level: evidenceLevel(pairing.pairs.length, below.length, above.length),
+    causal_interpretation: 'not_established',
+    threshold_reselected: false,
+    reasons: [],
+    limitations,
   };
 }
