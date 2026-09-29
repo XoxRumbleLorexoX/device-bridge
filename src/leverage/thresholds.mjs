@@ -106,21 +106,22 @@ export async function listThresholdHypotheses(store, { experiment_id } = {}) {
     .map(item => structuredClone(publicHypothesis(item)));
 }
 
-export async function validateRegisteredThreshold(store, hypothesisId, { clock = () => Date.now() } = {}) {
-  const state = await store.read();
-  const hypothesis = state.threshold_hypotheses.find(item => item.id === hypothesisId);
+export function evaluateRegisteredThresholdState(state, hypothesisId, { clock = () => Date.now() } = {}) {
+  if (!state || typeof state !== 'object') throw new TypeError('leverage state is required.');
+  const hypothesis = (state.threshold_hypotheses ?? []).find(item => item.id === hypothesisId);
   if (!hypothesis) throw new Error('Threshold hypothesis not found.');
-  if (!state.experiments.some(item => item.id === hypothesis.experiment_id)) throw new Error('Referenced experiment no longer exists.');
+  if (!(state.experiments ?? []).some(item => item.id === hypothesis.experiment_id)) throw new Error('Referenced experiment no longer exists.');
+  const measurements = state.outcome_measurements ?? [];
   const startIndex = hypothesis.registration_measurement_index;
-  if (!Number.isInteger(startIndex) || startIndex < 0 || startIndex > state.outcome_measurements.length)
+  if (!Number.isInteger(startIndex) || startIndex < 0 || startIndex > measurements.length)
     throw new Error('Threshold registration boundary is invalid for the current store.');
   if (typeof hypothesis.registration_prefix_digest !== 'string' || !/^[0-9a-f]{64}$/u.test(hypothesis.registration_prefix_digest))
     throw new Error('Threshold registration prefix digest is missing or invalid.');
-  const currentPrefixDigest = measurementPrefixDigest(state.outcome_measurements, startIndex);
+  const currentPrefixDigest = measurementPrefixDigest(measurements, startIndex);
   if (currentPrefixDigest !== hypothesis.registration_prefix_digest)
     throw new Error('Pre-registration outcome-measurement prefix changed; held-out boundary integrity cannot be established.');
 
-  const heldOutMeasurements = state.outcome_measurements.slice(startIndex);
+  const heldOutMeasurements = measurements.slice(startIndex);
   const evaluation = validateFixedThresholdSignal({
     measurements: heldOutMeasurements,
     experiment_id: hypothesis.experiment_id,
@@ -150,4 +151,9 @@ export async function validateRegisteredThreshold(store, hypothesisId, { clock =
     evaluated_at: new Date(clock()).toISOString(),
     read_only: true,
   };
+}
+
+export async function validateRegisteredThreshold(store, hypothesisId, { clock = () => Date.now() } = {}) {
+  const state = await store.read();
+  return evaluateRegisteredThresholdState(state, hypothesisId, { clock });
 }
