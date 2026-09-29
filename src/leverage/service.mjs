@@ -111,7 +111,7 @@ export class LeverageService {
   async deleteHistory({ confirm, retain_goals = false } = {}) {
     if (confirm !== 'DELETE_LEVERAGE_HISTORY') throw new Error('History deletion requires confirm=DELETE_LEVERAGE_HISTORY.');
     return this.store.transaction(state => {
-      const collections = ['events', 'activities', 'repetitions', 'sequences', 'frictions', 'variable_definitions', 'observations', 'outcome_metrics', 'bottlenecks', 'opportunities', 'experiments', 'outcome_measurements', 'feedback'];
+      const collections = ['events', 'activities', 'repetitions', 'sequences', 'frictions', 'variable_definitions', 'observations', 'outcome_metrics', 'bottlenecks', 'opportunities', 'experiments', 'outcome_measurements', 'threshold_hypotheses', 'feedback'];
       const counts = Object.fromEntries(collections.map(key => [key, Array.isArray(state[key]) ? state[key].length : 0]));
       for (const key of collections) state[key] = [];
       state.causal_graph = { nodes: [], edges: [] };
