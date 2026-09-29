@@ -8,7 +8,7 @@ import { verifyHostKey } from './pairing.mjs';
 import { loadConfig, SSHTransport } from './transport.mjs';
 import { serve, envelope } from './gateway.mjs';
 import { readinessReport } from './readiness.mjs';
-import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, GitMetadataProvider, CalendarMetadataProvider, renderLeverageReport, detectThresholdSignal } from './leverage/index.mjs';
+import { LeverageService, LeverageStore, defaultLeverageStorePath, syntheticLeverageFixture, GitMetadataProvider, CalendarMetadataProvider, renderLeverageReport, detectThresholdSignal, registerThresholdHypothesis, listThresholdHypotheses, validateRegisteredThreshold } from './leverage/index.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -156,11 +156,47 @@ async function leverageCommand() {
     }));
     return;
   }
+  if (subcommand === 'threshold-register') {
+    const experimentId = option('experiment');
+    const driverMetricId = option('driver');
+    const outcomeMetricId = option('outcome');
+    const thresholdText = option('threshold');
+    const driverUnit = option('driver-unit');
+    const outcomeUnit = option('outcome-unit');
+    if (!experimentId || !driverMetricId || !outcomeMetricId || thresholdText === undefined || !driverUnit || !outcomeUnit)
+      throw Error('leverage threshold-register requires --experiment UUID --driver METRIC --outcome METRIC --threshold NUMBER --driver-unit UNIT --outcome-unit UNIT');
+    const minimumAbsoluteText = option('minimum-absolute-change');
+    print(await registerThresholdHypothesis(service.store, {
+      experiment_id: experimentId,
+      driver_metric_id: driverMetricId,
+      outcome_metric_id: outcomeMetricId,
+      phase: option('phase', 'intervention'),
+      threshold_value: Number(thresholdText),
+      expected_change: option('expected-change', 'unspecified'),
+      driver_unit: driverUnit,
+      outcome_unit: outcomeUnit,
+      minimum_samples: Number(option('minimum-samples', '6')),
+      minimum_per_side: Number(option('minimum-per-side', '3')),
+      minimum_absolute_change: minimumAbsoluteText === undefined ? null : Number(minimumAbsoluteText),
+      note: option('note'),
+    }));
+    return;
+  }
+  if (subcommand === 'thresholds') {
+    print(await listThresholdHypotheses(service.store, { experiment_id: option('experiment') }));
+    return;
+  }
+  if (subcommand === 'threshold-validate') {
+    const hypothesisId = option('hypothesis');
+    if (!hypothesisId) throw Error('leverage threshold-validate requires --hypothesis UUID');
+    print(await validateRegisteredThreshold(service.store, hypothesisId));
+    return;
+  }
   if (subcommand === 'delete-history') {
     print(await service.deleteHistory({ confirm: option('confirm'), retain_goals: option('retain-goals', 'false') === 'true' }));
     return;
   }
-  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | collect-calendar --file PATH.ics --label SAFE_LABEL [--since 30d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | report [--output PATH] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) [--sample SAMPLE_ID] [--phase baseline|intervention|followup|unspecified] | experiment --opportunity UUID [--days 14] | experiment-evaluate --experiment UUID --metric ID [--direction auto|increase|decrease|maintain|unspecified] [--tolerance NUMBER] | threshold-detect --experiment UUID --driver METRIC --outcome METRIC [--phase baseline|intervention|followup|any] [--minimum-samples 8] [--minimum-per-side 3] | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
+  process.stdout.write('bridge leverage demo | ingest --file PATH [--provider ID] [--store PATH] | collect-git --repo PATH --label SAFE_LABEL [--since 7d] [--privacy PRIVATE|PERSONAL] [--store PATH] | collect-calendar --file PATH.ics --label SAFE_LABEL [--since 30d] [--privacy PRIVATE|PERSONAL] [--store PATH] | goal --description TEXT --domain DOMAIN [--objectives a,b] [--priority 0..1] [--provenance explicit|inferred] | goal-confirm --goal UUID | find [--domain DOMAIN] [--goal UUID] [--horizon 30d] [--store PATH] | report [--output PATH] [--store PATH] | review | privacy | feedback --opportunity UUID --status STATUS | outcome --metric ID --value VALUE --unit UNIT (--opportunity UUID|--experiment UUID) [--sample SAMPLE_ID] [--phase baseline|intervention|followup|unspecified] | experiment --opportunity UUID [--days 14] | experiment-evaluate --experiment UUID --metric ID [--direction auto|increase|decrease|maintain|unspecified] [--tolerance NUMBER] | threshold-detect --experiment UUID --driver METRIC --outcome METRIC [--phase baseline|intervention|followup|any] [--minimum-samples 8] [--minimum-per-side 3] | threshold-register --experiment UUID --driver METRIC --outcome METRIC --threshold NUMBER --driver-unit UNIT --outcome-unit UNIT [--expected-change CHANGE] [--phase PHASE] [--minimum-samples 6] [--minimum-per-side 3] [--minimum-absolute-change NUMBER] | thresholds [--experiment UUID] | threshold-validate --hypothesis UUID | delete-history --confirm DELETE_LEVERAGE_HISTORY [--retain-goals true]\n');
   if (subcommand) process.exitCode = 2;
 }
 
