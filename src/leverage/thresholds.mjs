@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { validateFixedThresholdSignal } from './nonlinearity.mjs';
 
 const PHASES = new Set(['baseline', 'intervention', 'followup', 'any']);
@@ -12,6 +12,11 @@ function assertMetricId(value, name) {
 
 function assertUnit(value, name) {
   if (typeof value !== 'string' || value.length < 1 || value.length > 80) throw new TypeError(`${name} must be 1..80 characters.`);
+}
+
+function measurementPrefixDigest(measurements, end) {
+  const prefix = measurements.slice(0, end);
+  return createHash('sha256').update(JSON.stringify(prefix)).digest('hex');
 }
 
 function assertPlan(input) {
@@ -44,6 +49,7 @@ export async function registerThresholdHypothesis(store, input, { clock = () => 
   return store.transaction(state => {
     if (!state.experiments.some(item => item.id === input.experiment_id)) throw new Error('Referenced experiment does not exist.');
     const registeredAt = new Date(clock()).toISOString();
+    const registrationMeasurementIndex = state.outcome_measurements.length;
     const hypothesis = {
       id: randomUUID(),
       experiment_id: input.experiment_id,
@@ -59,7 +65,8 @@ export async function registerThresholdHypothesis(store, input, { clock = () => 
       minimum_absolute_change: input.minimum_absolute_change ?? null,
       note: input.note,
       registered_at: registeredAt,
-      registration_measurement_index: state.outcome_measurements.length,
+      registration_measurement_index: registrationMeasurementIndex,
+      registration_prefix_digest: measurementPrefixDigest(state.outcome_measurements, registrationMeasurementIndex),
       status: 'registered',
       causal_interpretation: 'not_established',
       authority: 'measurement_plan_only',
@@ -84,6 +91,11 @@ export async function validateRegisteredThreshold(store, hypothesisId, { clock =
   const startIndex = hypothesis.registration_measurement_index;
   if (!Number.isInteger(startIndex) || startIndex < 0 || startIndex > state.outcome_measurements.length)
     throw new Error('Threshold registration boundary is invalid for the current store.');
+  if (typeof hypothesis.registration_prefix_digest !== 'string' || !/^[0-9a-f]{64}$/u.test(hypothesis.registration_prefix_digest))
+    throw new Error('Threshold registration prefix digest is missing or invalid.');
+  const currentPrefixDigest = measurementPrefixDigest(state.outcome_measurements, startIndex);
+  if (currentPrefixDigest !== hypothesis.registration_prefix_digest)
+    throw new Error('Pre-registration outcome-measurement prefix changed; held-out boundary integrity cannot be established.');
 
   const heldOutMeasurements = state.outcome_measurements.slice(startIndex);
   const evaluation = validateFixedThresholdSignal({
@@ -119,9 +131,12 @@ export async function validateRegisteredThreshold(store, hypothesisId, { clock =
       status: hypothesis.status,
     },
     held_out_boundary: {
+      basis: 'store_append_order',
       registration_measurement_index: startIndex,
       measurements_appended_since_registration: heldOutMeasurements.length,
-      discovery_measurements_reused: false,
+      pre_registration_store_measurements_reused: false,
+      pre_registration_prefix_integrity_verified: true,
+      real_world_observation_novelty_verified: false,
     },
     evaluation,
     evaluated_at: new Date(clock()).toISOString(),
