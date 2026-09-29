@@ -3,6 +3,7 @@ import { validateFixedThresholdSignal } from './nonlinearity.mjs';
 
 const PHASES = new Set(['baseline', 'intervention', 'followup', 'any']);
 const EXPECTED_CHANGES = new Set(['outcome_higher_above_threshold', 'outcome_lower_above_threshold', 'no_observed_mean_difference', 'unspecified']);
+const DIRECTIONAL_CHANGES = new Set(['outcome_higher_above_threshold', 'outcome_lower_above_threshold']);
 const METRIC_ID = /^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,159}$/u;
 
 function assertMetricId(value, name) {
@@ -21,15 +22,20 @@ function assertPlan(input) {
   if (input.driver_metric_id === input.outcome_metric_id) throw new TypeError('driver_metric_id and outcome_metric_id must be different.');
   if (!PHASES.has(input.phase ?? 'intervention')) throw new TypeError('phase must be baseline, intervention, followup or any.');
   if (!Number.isFinite(input.threshold_value)) throw new TypeError('threshold_value must be a finite number.');
-  if (!EXPECTED_CHANGES.has(input.expected_change ?? 'unspecified')) throw new TypeError('expected_change is invalid.');
+  const expectedChange = input.expected_change ?? 'unspecified';
+  if (!EXPECTED_CHANGES.has(expectedChange)) throw new TypeError('expected_change is invalid.');
   assertUnit(input.driver_unit, 'driver_unit');
   assertUnit(input.outcome_unit, 'outcome_unit');
   const minimumSamples = input.minimum_samples ?? 6;
   const minimumPerSide = input.minimum_per_side ?? 3;
   if (!Number.isInteger(minimumSamples) || minimumSamples < 6 || minimumSamples > 1000) throw new TypeError('minimum_samples must be an integer between 6 and 1000.');
   if (!Number.isInteger(minimumPerSide) || minimumPerSide < 2 || minimumPerSide > 500) throw new TypeError('minimum_per_side must be an integer between 2 and 500.');
-  if (input.minimum_absolute_change !== undefined && input.minimum_absolute_change !== null && (!Number.isFinite(input.minimum_absolute_change) || input.minimum_absolute_change < 0))
-    throw new TypeError('minimum_absolute_change must be null or a non-negative finite number.');
+  if (input.minimum_absolute_change !== undefined && input.minimum_absolute_change !== null) {
+    if (!Number.isFinite(input.minimum_absolute_change) || input.minimum_absolute_change < 0)
+      throw new TypeError('minimum_absolute_change must be null or a non-negative finite number.');
+    if (!DIRECTIONAL_CHANGES.has(expectedChange))
+      throw new TypeError('minimum_absolute_change is only valid for directional threshold hypotheses.');
+  }
   if (input.note !== undefined && (typeof input.note !== 'string' || input.note.length > 1000)) throw new TypeError('note must be at most 1000 characters.');
 }
 
