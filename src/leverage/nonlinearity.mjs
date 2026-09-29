@@ -1,3 +1,5 @@
+const ANALYSABLE_PHASES = new Set(['baseline', 'intervention', 'followup']);
+
 function round(value, digits = 4) {
   if (!Number.isFinite(value)) return null;
   const factor = 10 ** digits;
@@ -50,6 +52,20 @@ function evidenceLevel(total, below, above) {
   return 'thin_exploratory_sample';
 }
 
+function phaseMatches(item, requestedPhase) {
+  if (requestedPhase === 'any') return ANALYSABLE_PHASES.has(item.phase);
+  return item.phase === requestedPhase;
+}
+
+function baseLimitations(phase) {
+  const limitations = [
+    'A threshold signal requires explicitly paired positive-confidence numeric driver/outcome measurements.',
+    'No temporal matching or sample pairing is inferred automatically.',
+  ];
+  if (phase === 'any') limitations.push('All-phase analysis keeps pairs phase-local but can still mix baseline, intervention and follow-up distributions; inspect phase-specific results before interpreting the combined signal.');
+  return limitations;
+}
+
 function insufficient(base, reasons) {
   return {
     ...base,
@@ -60,16 +76,13 @@ function insufficient(base, reasons) {
     reasons,
     causal_interpretation: 'not_established',
     validation_required: true,
-    limitations: [
-      'A threshold signal requires explicitly paired positive-confidence numeric driver/outcome measurements.',
-      'No temporal matching or sample pairing is inferred automatically.',
-    ],
+    limitations: baseLimitations(base.phase),
   };
 }
 
 function measurementEligible(item, experimentId, metricId, phase) {
   if (item.experiment_id !== experimentId || item.metric_id !== metricId) return false;
-  if (phase !== 'any' && item.phase !== phase) return false;
+  if (!phaseMatches(item, phase)) return false;
   return typeof item.sample_id === 'string' && item.sample_id.length > 0 &&
     typeof item.value === 'number' && Number.isFinite(item.value) &&
     typeof item.confidence === 'number' && Number.isFinite(item.confidence) && item.confidence > 0;
@@ -86,7 +99,7 @@ function pairedSamples(measurements, { experimentId, driverMetricId, outcomeMetr
   const relevant = measurements.filter(item =>
     item.experiment_id === experimentId &&
     (item.metric_id === driverMetricId || item.metric_id === outcomeMetricId) &&
-    (phase === 'any' || item.phase === phase)
+    phaseMatches(item, phase)
   );
   let ineligible = 0;
   for (const item of relevant) {
@@ -214,6 +227,16 @@ export function detectThresholdSignal({
   const best = candidates[0];
   const observedChange = best.absolute_change > 0 ? 'outcome_higher_above_threshold' : best.absolute_change < 0 ? 'outcome_lower_above_threshold' : 'no_observed_mean_difference';
 
+  const limitations = [
+    'This is an exploratory change-point signal, not proof that a real discontinuity or causal threshold exists.',
+    'The threshold was selected on the same samples used to measure separation, so the observed effect is selection-biased upward unless confirmed on new data.',
+    'The standardized mean difference is descriptive and unweighted; it is reported alongside, not used to select, the confidence-weighted mean split.',
+    'Confounding variables, time trends, interventions, regression to the mean and outliers can create apparent threshold structure.',
+    'Measurement confidence only weights descriptive means; it is not a probability that this threshold is correct.',
+    'No p-value, causal effect or out-of-sample performance is claimed.',
+  ];
+  if (phase === 'any') limitations.push('The combined analysis keeps pair formation phase-local but pools baseline, intervention and follow-up pairs when searching for the split; inspect phase-specific results before interpreting the combined signal.');
+
   return {
     ...base,
     status: 'exploratory_threshold_candidate',
@@ -239,14 +262,7 @@ export function detectThresholdSignal({
     causal_interpretation: 'not_established',
     validation_required: true,
     reasons: [],
-    limitations: [
-      'This is an exploratory change-point signal, not proof that a real discontinuity or causal threshold exists.',
-      'The threshold was selected on the same samples used to measure separation, so the observed effect is selection-biased upward unless confirmed on new data.',
-      'The standardized mean difference is descriptive and unweighted; it is reported alongside, not used to select, the confidence-weighted mean split.',
-      'Confounding variables, time trends, interventions, regression to the mean and outliers can create apparent threshold structure.',
-      'Measurement confidence only weights descriptive means; it is not a probability that this threshold is correct.',
-      'No p-value, causal effect or out-of-sample performance is claimed.',
-    ],
+    limitations,
     recommended_next_step: 'Pre-register this candidate split, collect new paired samples on both sides without changing the threshold, and compare the held-out outcome separation.',
   };
 }
