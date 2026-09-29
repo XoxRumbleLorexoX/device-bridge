@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { DEFAULT_PRIVACY_POLICY } from './model.mjs';
 
-const COLLECTIONS = ['events', 'activities', 'repetitions', 'sequences', 'frictions', 'variable_definitions', 'observations', 'goals', 'outcome_metrics', 'bottlenecks', 'opportunities', 'experiments', 'outcome_measurements', 'threshold_hypotheses', 'feedback'];
+const COLLECTIONS = ['events', 'activities', 'repetitions', 'sequences', 'frictions', 'variable_definitions', 'observations', 'observation_history', 'goals', 'outcome_metrics', 'bottlenecks', 'opportunities', 'experiments', 'outcome_measurements', 'threshold_hypotheses', 'feedback'];
 
 export function defaultLeverageStorePath(env = process.env) {
   return env.DEVICE_BRIDGE_LEVERAGE_STORE || join(homedir(), '.local', 'share', 'device-bridge', 'leverage-store.json');
@@ -21,6 +21,7 @@ export function emptyLeverageState() {
     frictions: [],
     variable_definitions: [],
     observations: [],
+    observation_history: [],
     goals: [],
     outcome_metrics: [],
     bottlenecks: [],
