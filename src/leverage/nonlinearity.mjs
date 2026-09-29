@@ -4,6 +4,10 @@ function round(value, digits = 4) {
   return Math.round(value * factor) / factor;
 }
 
+function mean(values) {
+  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+}
+
 function median(values) {
   if (!values.length) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -13,8 +17,8 @@ function median(values) {
 
 function sampleSd(values) {
   if (values.length < 2) return null;
-  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1);
+  const arithmeticMean = mean(values);
+  const variance = values.reduce((sum, value) => sum + (value - arithmeticMean) ** 2, 0) / (values.length - 1);
   return Math.sqrt(variance);
 }
 
@@ -25,16 +29,18 @@ function weightedMean(pairs) {
   return pairs.reduce((sum, pair) => sum + pair.outcome * pair.weight, 0) / totalWeight;
 }
 
-function pooledStandardizedDifference(below, above, difference) {
+function pooledStandardizedDifference(below, above) {
   if (below.length < 2 || above.length < 2) return null;
-  const belowSd = sampleSd(below.map(pair => pair.outcome));
-  const aboveSd = sampleSd(above.map(pair => pair.outcome));
+  const belowValues = below.map(pair => pair.outcome);
+  const aboveValues = above.map(pair => pair.outcome);
+  const belowSd = sampleSd(belowValues);
+  const aboveSd = sampleSd(aboveValues);
   if (belowSd === null || aboveSd === null) return null;
   const denominatorDf = below.length + above.length - 2;
   if (denominatorDf <= 0) return null;
   const pooledVariance = (((below.length - 1) * belowSd ** 2) + ((above.length - 1) * aboveSd ** 2)) / denominatorDf;
   if (!(pooledVariance > 0)) return null;
-  return difference / Math.sqrt(pooledVariance);
+  return (mean(aboveValues) - mean(belowValues)) / Math.sqrt(pooledVariance);
 }
 
 function evidenceLevel(total, below, above) {
@@ -134,7 +140,6 @@ export function detectThresholdSignal({
   if (!['baseline', 'intervention', 'followup', 'any'].includes(phase)) throw new TypeError('phase must be baseline, intervention, followup or any.');
   if (!Number.isInteger(minimum_samples) || minimum_samples < 6 || minimum_samples > 1000) throw new TypeError('minimum_samples must be an integer between 6 and 1000.');
   if (!Number.isInteger(minimum_per_side) || minimum_per_side < 2 || minimum_per_side > 500) throw new TypeError('minimum_per_side must be an integer between 2 and 500.');
-  if (minimum_per_side * 2 > minimum_samples) throw new TypeError('minimum_samples must be at least twice minimum_per_side.');
 
   const pairing = pairedSamples(measurements, {
     experimentId: experiment_id,
@@ -182,7 +187,7 @@ export function detectThresholdSignal({
     const aboveMean = weightedMean(above);
     if (belowMean === null || aboveMean === null) continue;
     const difference = aboveMean - belowMean;
-    const standardized = pooledStandardizedDifference(below, above, difference);
+    const standardized = pooledStandardizedDifference(below, above);
     candidates.push({
       value: threshold,
       below_count: below.length,
@@ -237,6 +242,7 @@ export function detectThresholdSignal({
     limitations: [
       'This is an exploratory change-point signal, not proof that a real discontinuity or causal threshold exists.',
       'The threshold was selected on the same samples used to measure separation, so the observed effect is selection-biased upward unless confirmed on new data.',
+      'The standardized mean difference is descriptive and unweighted; it is reported alongside, not used to select, the confidence-weighted mean split.',
       'Confounding variables, time trends, interventions, regression to the mean and outliers can create apparent threshold structure.',
       'Measurement confidence only weights descriptive means; it is not a probability that this threshold is correct.',
       'No p-value, causal effect or out-of-sample performance is claimed.',
