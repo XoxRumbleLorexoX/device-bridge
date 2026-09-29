@@ -69,6 +69,12 @@ function measurementEligible(item, experimentId, metricId, phase) {
     typeof item.confidence === 'number' && Number.isFinite(item.confidence) && item.confidence > 0;
 }
 
+function pairingKey(item, requestedPhase) {
+  // Even an all-phase query must never pair a driver from one experiment phase with
+  // an outcome from another. A sample identifier is only meaningful inside its phase.
+  return requestedPhase === 'any' ? `${item.phase}\u0000${item.sample_id}` : item.sample_id;
+}
+
 function pairedSamples(measurements, { experimentId, driverMetricId, outcomeMetricId, phase }) {
   const groups = new Map();
   const relevant = measurements.filter(item =>
@@ -82,8 +88,9 @@ function pairedSamples(measurements, { experimentId, driverMetricId, outcomeMetr
       ineligible += 1;
       continue;
     }
-    if (!groups.has(item.sample_id)) groups.set(item.sample_id, { driver: [], outcome: [] });
-    const bucket = groups.get(item.sample_id);
+    const key = pairingKey(item, phase);
+    if (!groups.has(key)) groups.set(key, { driver: [], outcome: [] });
+    const bucket = groups.get(key);
     if (item.metric_id === driverMetricId) bucket.driver.push(item);
     if (item.metric_id === outcomeMetricId) bucket.outcome.push(item);
   }
