@@ -13,13 +13,13 @@ inspect candidate + caveats
         ↓
 explicit threshold-register
         ↓
-registration boundary freezes
+store boundary + prefix digest freeze
         ↓
-collect NEW paired measurements
+append later paired measurements
         ↓
 threshold-validate
         ↓
-fixed-threshold held-out description
+fixed-threshold hold-out description
 ```
 
 Validation does not re-run the threshold search.
@@ -56,12 +56,13 @@ A registration stores a separate `threshold_hypotheses` record containing:
 - optional minimum absolute change for directional hypotheses;
 - registration time;
 - the current `outcome_measurements` append index;
+- a SHA-256 digest of the pre-registration measurement prefix;
 - `causal_interpretation: not_established`;
 - `authority: measurement_plan_only`.
 
 Registration does not modify the experiment, recommendation ranking, feedback, device state or provider state.
 
-## 2. Why the hold-out boundary is an append index
+## 2. What the hold-out boundary proves
 
 Outcome measurements may contain caller-supplied observation timestamps. Those timestamps are useful domain data, but they are not a sufficiently strong provenance boundary for deciding whether a measurement was already available during discovery.
 
@@ -69,19 +70,31 @@ At registration, MobileLAM therefore freezes:
 
 ```text
 registration_measurement_index = outcome_measurements.length
+registration_prefix_digest = SHA256(JSON(pre-registration measurements))
 ```
 
-Validation sees only:
+Validation first verifies that the pre-registration prefix still hashes to the registered digest and then sees only:
 
 ```text
 outcome_measurements.slice(registration_measurement_index)
 ```
 
-This means measurements already present in the store cannot become held-out evidence merely by carrying a later timestamp.
+This proves that measurements **already present in the store at registration** are not reused by the validator and that the saved pre-registration prefix has not been changed/reordered without detection.
 
-If the measurement collection has been truncated or corrupted so the saved boundary is beyond its current length, validation fails rather than silently changing the boundary.
+It does **not** independently prove that a record appended later represents a real-world observation that actually occurred later. A caller could still enter an older observation after registration. The result therefore reports:
 
-## 3. Collect new paired measurements
+```text
+basis: store_append_order
+pre_registration_store_measurements_reused: false
+pre_registration_prefix_integrity_verified: true
+real_world_observation_novelty_verified: false
+```
+
+Operationally, collect genuinely new observations after registration. The software can enforce store provenance; it cannot independently certify when a human/provider originally observed a fact.
+
+If the collection is truncated below the saved index or the frozen prefix changes, validation fails instead of silently moving/reconstructing the boundary.
+
+## 3. Append later paired measurements
 
 Continue recording driver/outcome measurements with explicit `sample_id` values after registration:
 
@@ -129,9 +142,9 @@ It also returns:
 - `magnitude_requirement_met` when a directional minimum was registered;
 - `pattern_consistent`;
 - `causal_interpretation: not_established`;
-- `held_out_boundary.discovery_measurements_reused: false`.
+- the explicit append-order boundary/provenance fields described above.
 
-`pattern_consistent` means only that the held-out descriptive pattern points in the pre-registered direction and, when applicable, meets the pre-registered magnitude requirement. It is not a causal or statistical-significance verdict.
+`pattern_consistent` means only that the later-appended descriptive pattern points in the pre-registered direction and, when applicable, meets the pre-registered magnitude requirement. It is not a causal or statistical-significance verdict.
 
 ## Direction semantics
 
@@ -150,7 +163,7 @@ With `expected_change=unspecified`, validation reports the held-out direction bu
 
 ## Unit drift
 
-Registration freezes both the driver and outcome units. If held-out pairs use different units, validation returns insufficient evidence instead of converting or guessing.
+Registration freezes both the driver and outcome units. If later-appended pairs use different units, validation returns insufficient evidence instead of converting or guessing.
 
 Unit conversion should happen explicitly upstream and be represented consistently before the measurement enters this comparison.
 
@@ -172,10 +185,11 @@ None invokes DeviceBridge, SSH or a provider.
 
 ## Interpretation boundary
 
-A held-out pattern is stronger evidence than re-scoring the discovery data, but it still does **not** prove causality.
+A fixed split assessed against records unavailable in the store at registration is stronger evidence than re-scoring the original discovery store state, but it still does **not** prove causality.
 
 Possible explanations still include:
 
+- retroactively entered observations;
 - confounding variables;
 - secular/time trends;
 - coincident interventions;
