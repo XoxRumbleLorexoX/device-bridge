@@ -6,9 +6,11 @@ import { BridgeError, SSHTransport, loadConfig } from './transport.mjs';
 import { EventSchema, FeedbackSchema, GoalSchema, OutcomeMeasurementSchema, PRIVACY_CLASS } from './leverage/model.mjs';
 import { LeverageService } from './leverage/service.mjs';
 import { detectThresholdSignal } from './leverage/nonlinearity.mjs';
+import { registerThresholdHypothesis, listThresholdHypotheses, validateRegisteredThreshold } from './leverage/thresholds.mjs';
 
 const id = z.string().uuid();
 const metricId = z.string().min(1).max(160).regex(/^[A-Za-z0-9][A-Za-z0-9._:/+-]*$/u);
+const thresholdChange = z.enum(['outcome_higher_above_threshold', 'outcome_lower_above_threshold', 'no_observed_mean_difference', 'unspecified']);
 const base = { device_id: id, request_id: id, deadline: z.number().finite() };
 const session = { ...base, session_id: id, fence: z.number().int().positive() };
 const text = z.string().min(1).max(64).refine(s => !/[\x00-\x1f\x7f]/u.test(s), 'Control characters and implicit submission are forbidden');
@@ -127,6 +129,37 @@ export const leverageTools = {
       return detectThresholdSignal({ measurements: state.outcome_measurements, ...args });
     },
   },
+  leverage_threshold_register: {
+    local: true,
+    schema: z.object({
+      experiment_id: id,
+      driver_metric_id: metricId,
+      outcome_metric_id: metricId,
+      phase: z.enum(['baseline', 'intervention', 'followup', 'any']).default('intervention'),
+      threshold_value: z.number().finite(),
+      expected_change: thresholdChange.default('unspecified'),
+      driver_unit: z.string().min(1).max(80),
+      outcome_unit: z.string().min(1).max(80),
+      minimum_samples: z.number().int().min(6).max(1000).default(6),
+      minimum_per_side: z.number().int().min(2).max(500).default(3),
+      minimum_absolute_change: z.number().finite().min(0).nullable().default(null),
+      note: z.string().max(1000).optional(),
+    }).strict(),
+    description: 'Explicitly pre-register a fixed threshold, expected direction, units and validation sample requirements before collecting held-out measurements. This only writes local measurement-plan state.',
+    handler: (service, args) => registerThresholdHypothesis(service.store, args, { clock: service.clock }),
+  },
+  leverage_threshold_hypotheses: {
+    local: true, readOnly: true, idempotent: true,
+    schema: z.object({ experiment_id: id.optional() }).strict(),
+    description: 'List registered threshold hypotheses and their frozen held-out validation plans.',
+    handler: (service, args) => listThresholdHypotheses(service.store, args),
+  },
+  leverage_threshold_validate: {
+    local: true, readOnly: true, idempotent: true,
+    schema: z.object({ hypothesis_id: id }).strict(),
+    description: 'Evaluate a pre-registered fixed threshold using only outcome measurements appended after registration. It reports descriptive consistency and never establishes causality.',
+    handler: (service, args) => validateRegisteredThreshold(service.store, args.hypothesis_id, { clock: service.clock }),
+  },
   leverage_review: {
     local: true, readOnly: true, idempotent: true,
     schema: z.object({}).strict(),
@@ -148,7 +181,7 @@ export const leverageTools = {
   leverage_history_delete: {
     local: true, destructive: true,
     schema: z.object({ confirm: z.literal('DELETE_LEVERAGE_HISTORY'), retain_goals: z.boolean().default(false) }).strict(),
-    description: 'Delete locally stored leverage history. Requires an exact explicit confirmation string; optionally retain goals.',
+    description: 'Delete locally stored leverage history, including experiments and registered threshold hypotheses. Requires an exact explicit confirmation string; optionally retain goals.',
     handler: (service, args) => service.deleteHistory(args),
   },
 };
