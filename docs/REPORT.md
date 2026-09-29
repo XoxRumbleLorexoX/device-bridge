@@ -47,6 +47,7 @@ The report can include:
 - leverage opportunity title, expected effect, confidence and ordering heuristic;
 - experiment hypothesis/intervention/metric names and measurement phase counts;
 - sanitized descriptive experiment comparisons for numeric baseline/intervention measurements;
+- registered fixed-threshold plans and sanitized held-out validation summaries;
 - sanitized leverage-graph node/edge labels, claim type and confidence;
 - high-level observation-policy status.
 
@@ -67,6 +68,28 @@ The report deliberately evaluates these summaries with **direction `unspecified`
 
 Use `leverage experiment-evaluate` / `leverage_experiment_evaluate` when you explicitly want a target direction and meaningful-change tolerance applied. Those evaluations also remain descriptive and do not establish causality.
 
+### Registered threshold evidence in the report
+
+The public report API composes the base renderer with the same registered-threshold evaluator used by CLI/MCP validation. It does not reimplement or re-search thresholds inside the report.
+
+For each registered threshold the report may show:
+
+- driver → outcome metric IDs;
+- fixed threshold and units;
+- registered phase and expected direction;
+- validation status/evidence level;
+- number of records appended after registration;
+- below/above sample counts when enough valid pairs exist;
+- observed aggregate outcome separation;
+- whether the held-out descriptive pattern is consistent with the registered expectation;
+- `threshold reselected: no`;
+- `causality not established`;
+- `real-world observation novelty independently verified: no`.
+
+Before displaying held-out results, the evaluator verifies the frozen pre-registration store-prefix digest. If that integrity check fails, the report degrades to `boundary_integrity_failed`; it does not expose the underlying digest, changed measurement, or raw validation error.
+
+The append-order boundary proves that records already present in the store at registration are excluded. It does **not** prove that a later-appended record corresponds to a real-world observation that actually happened later.
+
 ## Deliberately excluded
 
 The report model does **not** include:
@@ -79,7 +102,11 @@ The report model does **not** include:
 - measurement IDs from experiment evaluation internals;
 - full assumption text;
 - full alternative text;
-- measurement evidence text.
+- measurement evidence text;
+- threshold sample IDs;
+- threshold raw measurements;
+- threshold integrity digests;
+- threshold registration notes.
 
 Regression fixtures place deliberately sensitive sentinel strings in those fields and require them to be absent from the report model and HTML.
 
@@ -89,7 +116,7 @@ All rendered text is HTML-escaped. The standalone output contains no script elem
 
 This reduces accidental raw-content exposure and eliminates a browser-network dependency. It does **not** make the report non-sensitive.
 
-Goals, variable values, bottlenecks, hypotheses, experiment summaries and recommendations are themselves derived personal information. Treat the generated HTML as private data and store/share it accordingly.
+Goals, variable values, bottlenecks, hypotheses, experiment/threshold summaries and recommendations are themselves derived personal information. Treat the generated HTML as private data and store/share it accordingly.
 
 The file is not application-level encrypted. Host/disk encryption remains the appropriate control when encryption-at-rest is required.
 
@@ -110,10 +137,11 @@ The report visualizes the model as it currently exists. It does not:
 
 - turn a hypothesis edge into a causal fact;
 - turn a before/after experiment difference into a causal effect;
+- turn threshold-pattern consistency into causal confirmation;
 - automatically accept a recommendation;
 - execute a recommendation;
-- change experiment status;
+- change experiment/threshold status;
 - change ranking or feedback;
 - contact the phone.
 
-Dashed leverage-map edges represent hypotheses where applicable. Counterfactual, observational and experiment before/after relationships retain their existing claim semantics.
+Dashed leverage-map edges represent hypotheses where applicable. Counterfactual, observational, experiment before/after and threshold-validation relationships retain their existing claim semantics.
