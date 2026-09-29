@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { detectThresholdSignal } from '../src/leverage/nonlinearity.mjs';
 import { OutcomeMeasurementSchema } from '../src/leverage/model.mjs';
+import { leverageTools } from '../src/gateway.mjs';
 
 const experimentId = '00000000-0000-4000-8000-000000000101';
 
@@ -148,4 +149,48 @@ test('phase scoping prevents accidental mixing of baseline and intervention samp
   });
   assert.equal(result.usable_pair_count, 10);
   assert.equal(result.relevant_measurement_count, 20);
+});
+
+test('phase=any still requires driver and outcome to share the same experiment phase', () => {
+  const crossPhaseOnly = [];
+  for (let index = 1; index <= 8; index += 1) {
+    const sample = `shared-${index}`;
+    crossPhaseOnly.push(measurement({ id: `driver-any-${index}`, sample, metric: 'focus.hours', value: index, unit: 'hours', phase: 'baseline' }));
+    crossPhaseOnly.push(measurement({ id: `outcome-any-${index}`, sample, metric: 'output.units', value: index * 2, unit: 'units/week', phase: 'intervention' }));
+  }
+  const result = detectThresholdSignal({
+    measurements: crossPhaseOnly,
+    experiment_id: experimentId,
+    driver_metric_id: 'focus.hours',
+    outcome_metric_id: 'output.units',
+    phase: 'any',
+  });
+  assert.equal(result.status, 'insufficient_evidence');
+  assert.equal(result.usable_pair_count, 0);
+  assert.equal(result.excluded_unpaired_sample_count, 16);
+});
+
+test('MCP threshold detector is local, read-only and does not mutate stored state', async () => {
+  const tool = leverageTools.leverage_threshold_detect;
+  assert.equal(tool.local, true);
+  assert.equal(tool.readOnly, true);
+  assert.equal(tool.idempotent, true);
+  assert.match(tool.description, /never establishes causality/u);
+
+  const state = {
+    experiments: [{ id: experimentId }],
+    outcome_measurements: cleanStepMeasurements(),
+  };
+  const before = structuredClone(state);
+  const service = { store: { read: async () => structuredClone(state) } };
+  const result = await tool.handler(service, {
+    experiment_id: experimentId,
+    driver_metric_id: 'focus.hours',
+    outcome_metric_id: 'output.units',
+    phase: 'intervention',
+    minimum_samples: 8,
+    minimum_per_side: 3,
+  });
+  assert.equal(result.status, 'exploratory_threshold_candidate');
+  assert.deepEqual(state, before);
 });
