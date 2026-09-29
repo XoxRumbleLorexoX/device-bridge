@@ -33,7 +33,8 @@ function projectThresholdValidation(state, hypothesis, generatedAt) {
   };
 
   try {
-    const result = evaluateRegisteredThresholdState(state, hypothesis.id, { clock: () => Date.parse(generatedAt) });
+    const evaluatedAt = Date.parse(generatedAt);
+    const result = evaluateRegisteredThresholdState(state, hypothesis.id, { clock: () => Number.isFinite(evaluatedAt) ? evaluatedAt : Date.now() });
     const evaluation = result.evaluation;
     return {
       ...base,
@@ -120,7 +121,7 @@ function renderThresholdCards(items) {
       : `${validation.below_count} below · ${validation.above_count} above`;
     const change = validation.absolute_change === null
       ? 'change unavailable'
-      : `observed Δ ${valueText(validation.absolute_change)} ${escapeHtml(validation.outcome_unit)}`;
+      : `observed Δ ${valueText(validation.absolute_change)} ${validation.outcome_unit}`;
     const integrity = validation.prefix_integrity_verified ? 'store boundary verified' : 'store boundary not verified';
     return `<article class="card">
       <div class="eyebrow">${escapeHtml(item.phase)} · registered threshold · causality not established</div>
