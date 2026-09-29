@@ -52,23 +52,29 @@ test('registered threshold freezes the current measurement append boundary', asy
   const store = await seededStore();
   const hypothesis = await registerThresholdHypothesis(store, registrationInput, { clock: () => Date.parse('2026-09-29T08:00:00.000Z') });
   assert.equal(hypothesis.registration_measurement_index, 20);
+  assert.match(hypothesis.registration_prefix_digest, /^[0-9a-f]{64}$/u);
   assert.equal(hypothesis.status, 'registered');
   assert.equal(hypothesis.causal_interpretation, 'not_established');
 
   const immediate = await validateRegisteredThreshold(store, hypothesis.id, { clock: () => Date.parse('2026-09-29T08:01:00.000Z') });
+  assert.equal(immediate.held_out_boundary.basis, 'store_append_order');
   assert.equal(immediate.held_out_boundary.measurements_appended_since_registration, 0);
-  assert.equal(immediate.held_out_boundary.discovery_measurements_reused, false);
+  assert.equal(immediate.held_out_boundary.pre_registration_store_measurements_reused, false);
+  assert.equal(immediate.held_out_boundary.pre_registration_prefix_integrity_verified, true);
+  assert.equal(immediate.held_out_boundary.real_world_observation_novelty_verified, false);
   assert.equal(immediate.evaluation.status, 'insufficient_evidence');
 });
 
-test('held-out validation ignores opposite discovery data and keeps the registered split fixed', async () => {
+test('held-out validation ignores opposite pre-registration store data and keeps the registered split fixed', async () => {
   const store = await seededStore();
   const hypothesis = await registerThresholdHypothesis(store, registrationInput, { clock: () => Date.parse('2026-09-29T08:00:00.000Z') });
   await store.transaction(state => { state.outcome_measurements.push(...stepPairs('holdout', 10, 20)); });
 
   const result = await validateRegisteredThreshold(store, hypothesis.id, { clock: () => Date.parse('2026-09-29T09:00:00.000Z') });
   assert.equal(result.held_out_boundary.measurements_appended_since_registration, 20);
-  assert.equal(result.held_out_boundary.discovery_measurements_reused, false);
+  assert.equal(result.held_out_boundary.pre_registration_store_measurements_reused, false);
+  assert.equal(result.held_out_boundary.pre_registration_prefix_integrity_verified, true);
+  assert.equal(result.held_out_boundary.real_world_observation_novelty_verified, false);
   assert.equal(result.evaluation.status, 'fixed_threshold_evaluation');
   assert.equal(result.evaluation.threshold.value, 5.5);
   assert.equal(result.evaluation.threshold.absolute_change, 10);
@@ -77,6 +83,16 @@ test('held-out validation ignores opposite discovery data and keeps the register
   assert.equal(result.evaluation.pattern_consistent, true);
   assert.equal(result.evaluation.threshold_reselected, false);
   assert.equal(result.evaluation.causal_interpretation, 'not_established');
+});
+
+test('validation fails if the pre-registration store prefix changes', async () => {
+  const store = await seededStore();
+  const hypothesis = await registerThresholdHypothesis(store, registrationInput);
+  await store.transaction(state => {
+    state.outcome_measurements[0] = { ...state.outcome_measurements[0], value: 999 };
+    state.outcome_measurements.push(...stepPairs('later', 10, 20));
+  });
+  await assert.rejects(validateRegisteredThreshold(store, hypothesis.id), /prefix changed/u);
 });
 
 test('held-out direction mismatch is reported without rewriting the hypothesis', async () => {
