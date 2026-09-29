@@ -52,9 +52,11 @@ test('registered threshold freezes the current measurement append boundary', asy
   const store = await seededStore();
   const hypothesis = await registerThresholdHypothesis(store, registrationInput, { clock: () => Date.parse('2026-09-29T08:00:00.000Z') });
   assert.equal(hypothesis.registration_measurement_index, 20);
-  assert.match(hypothesis.registration_prefix_digest, /^[0-9a-f]{64}$/u);
+  assert.equal(hypothesis.registration_prefix_digest, undefined, 'internal integrity digest must not be exposed');
   assert.equal(hypothesis.status, 'registered');
   assert.equal(hypothesis.causal_interpretation, 'not_established');
+  const internal = (await store.read()).threshold_hypotheses.find(item => item.id === hypothesis.id);
+  assert.match(internal.registration_prefix_digest, /^[0-9a-f]{64}$/u);
 
   const immediate = await validateRegisteredThreshold(store, hypothesis.id, { clock: () => Date.parse('2026-09-29T08:01:00.000Z') });
   assert.equal(immediate.held_out_boundary.basis, 'store_append_order');
@@ -218,11 +220,13 @@ test('MCP registration is local and validation/listing remain read-only', () => 
   assert.match(validate.description, /only outcome measurements appended after registration/u);
 });
 
-test('registered hypotheses can be listed by experiment without exposing measurement evidence', async () => {
+test('registered hypotheses can be listed by experiment without exposing measurement evidence or integrity digests', async () => {
   const store = await seededStore();
   const hypothesis = await registerThresholdHypothesis(store, registrationInput);
   const listed = await listThresholdHypotheses(store, { experiment_id: experimentId });
   assert.equal(listed.length, 1);
   assert.equal(listed[0].id, hypothesis.id);
-  assert.doesNotMatch(JSON.stringify(listed), /discovery-d-/u);
+  const serialized = JSON.stringify(listed);
+  assert.doesNotMatch(serialized, /discovery-d-/u);
+  assert.doesNotMatch(serialized, /registration_prefix_digest/u);
 });
