@@ -19,6 +19,29 @@ function measurementPrefixDigest(measurements, end) {
   return createHash('sha256').update(JSON.stringify(prefix)).digest('hex');
 }
 
+function publicHypothesis(hypothesis) {
+  return {
+    id: hypothesis.id,
+    experiment_id: hypothesis.experiment_id,
+    driver_metric_id: hypothesis.driver_metric_id,
+    outcome_metric_id: hypothesis.outcome_metric_id,
+    phase: hypothesis.phase,
+    threshold_value: hypothesis.threshold_value,
+    expected_change: hypothesis.expected_change,
+    driver_unit: hypothesis.driver_unit,
+    outcome_unit: hypothesis.outcome_unit,
+    minimum_samples: hypothesis.minimum_samples,
+    minimum_per_side: hypothesis.minimum_per_side,
+    minimum_absolute_change: hypothesis.minimum_absolute_change,
+    note: hypothesis.note,
+    registered_at: hypothesis.registered_at,
+    registration_measurement_index: hypothesis.registration_measurement_index,
+    status: hypothesis.status,
+    causal_interpretation: hypothesis.causal_interpretation,
+    authority: hypothesis.authority,
+  };
+}
+
 function assertPlan(input) {
   if (!input || typeof input !== 'object') throw new TypeError('threshold hypothesis input is required.');
   if (typeof input.experiment_id !== 'string' || !input.experiment_id) throw new TypeError('experiment_id is required.');
@@ -72,7 +95,7 @@ export async function registerThresholdHypothesis(store, input, { clock = () => 
       authority: 'measurement_plan_only',
     };
     state.threshold_hypotheses.push(hypothesis);
-    return structuredClone(hypothesis);
+    return structuredClone(publicHypothesis(hypothesis));
   });
 }
 
@@ -80,7 +103,7 @@ export async function listThresholdHypotheses(store, { experiment_id } = {}) {
   const state = await store.read();
   return state.threshold_hypotheses
     .filter(item => !experiment_id || item.experiment_id === experiment_id)
-    .map(item => structuredClone(item));
+    .map(item => structuredClone(publicHypothesis(item)));
 }
 
 export async function validateRegisteredThreshold(store, hypothesisId, { clock = () => Date.now() } = {}) {
@@ -114,22 +137,7 @@ export async function validateRegisteredThreshold(store, hypothesisId, { clock =
   });
 
   return {
-    hypothesis: {
-      id: hypothesis.id,
-      experiment_id: hypothesis.experiment_id,
-      driver_metric_id: hypothesis.driver_metric_id,
-      outcome_metric_id: hypothesis.outcome_metric_id,
-      phase: hypothesis.phase,
-      threshold_value: hypothesis.threshold_value,
-      expected_change: hypothesis.expected_change,
-      driver_unit: hypothesis.driver_unit,
-      outcome_unit: hypothesis.outcome_unit,
-      minimum_samples: hypothesis.minimum_samples,
-      minimum_per_side: hypothesis.minimum_per_side,
-      minimum_absolute_change: hypothesis.minimum_absolute_change,
-      registered_at: hypothesis.registered_at,
-      status: hypothesis.status,
-    },
+    hypothesis: structuredClone(publicHypothesis(hypothesis)),
     held_out_boundary: {
       basis: 'store_append_order',
       registration_measurement_index: startIndex,
